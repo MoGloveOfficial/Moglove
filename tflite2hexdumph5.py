@@ -1,43 +1,49 @@
-import tensorflow as tf
-import numpy as np
-import hexdump
 
-# Load your TFLite model
-tflite_model_path =  'C:\\Users\\PC-kun\\Desktop\\MoGlove ML\\MoGloveModel.tflite'
+
+def hex_to_c_array(hex_data, var_name):
+
+  c_str = ''
+
+  # Create header guard
+  c_str += '#ifndef ' + var_name.upper() + '_H\n'
+  c_str += '#define ' + var_name.upper() + '_H\n\n'
+
+  # Add array length at top of file
+  c_str += '\nunsigned int ' + var_name + '_len = ' + str(len(hex_data)) + ';\n'
+
+  # Declare C variable
+  c_str += 'unsigned char ' + var_name + '[] = {'
+  hex_array = []
+  for i, val in enumerate(hex_data) :
+
+    # Construct string from hex
+    hex_str = format(val, '#04x')
+
+    # Add formatting so each line stays within 80 characters
+    if (i + 1) < len(hex_data):
+      hex_str += ','
+    if (i + 1) % 12 == 0:
+      hex_str += '\n '
+    hex_array.append(hex_str)
+
+  # Add closing brace
+  c_str += '\n ' + format(' '.join(hex_array)) + '\n};\n\n'
+
+  # Close out header guard
+  c_str += '#endif //' + var_name.upper() + '_H'
+
+  return c_str
+
+
+
+tflite_model_path = 'C:\\Users\\PC-kun\\Desktop\\MoGlove ML\\MoGloveModel.tflite'
+dump_path = "C:\\Users\\PC-kun\\Desktop\\MoGlove ML\\dumped_model.h5"
+
 with open(tflite_model_path, 'rb') as file:
     tflite_model = file.read()
 
-hex_lines = []
-for chunk in hexdump.chunks(tflite_model, 16):
-    hex_lines.append('0x' + hexdump.dump(chunk, sep=', 0x'))
 
-# Save the hex dump in model.h5
-with open('model.h5', 'w') as f:
-    f.write('const unsigned char modelBin[] = {\n')
-    for index, line in enumerate(hex_lines):
-        f.write('  ' + line)
-        if index < len(hex_lines) - 1:
-            f.write(',')
-        f.write('\n')
-    f.write('};\n\n')
+with open(dump_path,  'w') as file:
+  file.write(hex_to_c_array(tflite_model, dump_path))
 
-    f.write('const unsigned int modelLen = {};\n'.format(len(tflite_model)))
-
-    f.write('const byte charMap[] = {\n')
-    highest_key = np.max(list(char_map.keys()))
-    for i in range(highest_key + 1):
-        if i % 10 == 0:
-            f.write('  ')
-
-        if i in char_map:
-            f.write(hex(ord(char_map[i])))
-        else:
-            f.write('0x00')
-
-        if i < highest_key:
-            f.write(', ')
-            if i % 10 == 9:
-                f.write('\n')
-    f.write('\n};\n\n')
-
-    f.write('#define charCount {}\n'.format(len(char_map)))
+print("Dumped")
