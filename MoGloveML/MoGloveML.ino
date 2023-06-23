@@ -158,6 +158,53 @@ void calFlex(){
         samples = 0;
     }
   }
+  //Calibrate closed fist next!
+  while(1){
+    readFlex(fingers);
+    //Get sum of fingers
+    for(int i =0; i < 5; i++){
+      sum += fingers[i];
+    }
+    Serial.print("sum: ");
+    Serial.println(sum);
+    if(sum > upperThres){
+      fin0sum += fingers[0];
+      fin1sum += fingers[1];
+      fin2sum += fingers[2];
+      fin3sum += fingers[3];
+      fin4sum += fingers[4];
+      samples++;
+      sum=0;
+      if (startTime == 0){
+        //Reset
+        startTime = millis();
+      }
+      else{
+        unsigned long currentTime = millis();
+        if(currentTime-startTime>=calTime){
+          max0 = fin0sum/samples;
+          max1 = fin1sum/samples;
+          max2 = fin2sum/samples;
+          max3 = fin3sum/samples;
+          max4 = fin4sum/samples;
+          samples = 0;
+          sum=0;
+          Serial.println("Closed Calibrated");
+          break;
+        }
+      }
+    }
+    else{
+        startTime = 0;
+        sum=0;
+        fin0sum = 0.0;
+        fin1sum = 0.0;
+        fin2sum = 0.0;
+        fin3sum = 0.0;
+        fin4sum = 0.0;
+        samples = 0;
+    }
+  }
 }
 
 
