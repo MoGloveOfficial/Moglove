@@ -5,6 +5,9 @@ Flex based Mocap glove
 MoGlove is the first flex based finger tracking solution with Machined trained pattern recognition to predict common hand gestures and poses based on curliness of fingers. 
 MoGlove uses tensorflow lite for microcontrollers, which handles all the recognition on board
 
+Zero drift/occulusion
+Pure resistive base tracking
+
 # Spec
 
 - 60Hz capture rate
