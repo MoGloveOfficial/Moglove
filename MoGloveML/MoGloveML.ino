@@ -6,7 +6,8 @@
  
 
 #include "modelNN.h"
-#include "OneButton.h"
+#include "patterns.h"
+#include <OneButton.h>
 #include <filters.h>
 
 const int fin0 = 34;  // Pin for analog input 1 thumb
@@ -75,24 +76,6 @@ Filter f3(cutoff_freq, sampling_time, order);
 Filter f4(cutoff_freq, sampling_time, order);
 
 OneButton Button(button, true);
-
-void singleClick(){
-  if (flexState == 0){
-    min0 = f0.filterIn(analogRead(fin0));
-    min1 = f1.filterIn(analogRead(fin1));
-    min2 = f2.filterIn(analogRead(fin2));
-    min3 = f3.filterIn(analogRead(fin3));
-    min4 = f4.filterIn(analogRead(fin4));
-  }
-  else{
-    max0 = f0.filterIn(analogRead(fin0));
-    max1 = f1.filterIn(analogRead(fin1));
-    max2 = f2.filterIn(analogRead(fin2));
-    max3 = f3.filterIn(analogRead(fin3));
-    max4 = f4.filterIn(analogRead(fin4));
-  }
-  flexState = 1-flexState;
-}
 
 void readFlex(float* fingers) {
   fingers[0] = f0.filterIn(analogRead(fin0));
@@ -214,11 +197,11 @@ void setup() {
   Serial.begin(115200);  // Initialize serial communication for debugging
   pinMode(button,INPUT_PULLUP);
   Button.attachClick(singleClick);
-  while (!modelNN.begin()) {
+  while (!modelNN.begin()) {    //Init tf model
     Serial.print("Error in NN initialization: ");
     Serial.println(modelNN.getErrorMessage());
     }
-  calFlex();
+  calFlex();          //Calibrate fingers
   delay(1000);        // Wait for serial to stabilize
 }
 
