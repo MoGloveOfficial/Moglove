@@ -1,23 +1,21 @@
 /*"MoGlove" machine trained flex based mocap glove
  * 
  * The MoGlove Project
+ * Licensed under Creative Commons
+ * 
  */
-
- 
 
 #include "modelNN.h"
 #include "patterns.h"
-#include <OneButton.h>
+#include "quaternion.h"
 #include <filters.h>
+
 
 const int fin0 = 34;  // Pin for analog input 1 thumb
 const int fin1 = 35;  // Pin for analog input 2 index
 const int fin2 = 32;  // Pin for analog input 3 middle
 const int fin3 = 33;  // Pin for analog input 4 ring
-const int fin4 = 25;  // Pin for analog input 5 pinky
-
-const int button = 27;
-bool flexState =0;
+const int fin4 = 25;  // Pin for analog input 5 pink
 
 float min0;
 float min1;
@@ -30,7 +28,6 @@ float max1;
 float max2;
 float max3;
 float max4;
-
 
 //Normalization vals
 float lower0 = -0.14;
@@ -56,6 +53,7 @@ float dif4 = upper4 - lower4;
 float upperThres = 9000.0;
 float lowerThres = 6000.0;
 
+
 //Sample at 60Hz, LPF => 10Hz
 
 const unsigned long calTime = 3000; //Hold for 3 seconds
@@ -65,7 +63,7 @@ unsigned long previousMillis = 0;   // Previous time value
 const unsigned long interval = 10;  // Sampling time interval in milliseconds
 const float cutoff_freq   = 10.0;  //Cutoff frequency in Hz
 const float sampling_time = 0.01666666; //Sampling time in seconds.
-IIR::ORDER  order  = IIR::ORDER::OD3; // Order (OD1 to OD4) Higher => Smoother
+IIR::ORDER  order  = IIR::ORDER::OD3; // Order (OD1 to OD4) Higher => Smoother but more latency
 
 
 // Low-pass filter for each fingers
@@ -74,8 +72,6 @@ Filter f1(cutoff_freq, sampling_time, order);
 Filter f2(cutoff_freq, sampling_time, order);
 Filter f3(cutoff_freq, sampling_time, order);
 Filter f4(cutoff_freq, sampling_time, order);
-
-OneButton Button(button, true);
 
 void readFlex(float* fingers) {
   fingers[0] = f0.filterIn(analogRead(fin0));
@@ -191,12 +187,8 @@ void calFlex(){
 }
 
 
-
-
 void setup() {
   Serial.begin(115200);  // Initialize serial communication for debugging
-  pinMode(button,INPUT_PULLUP);
-  Button.attachClick(singleClick);
   while (!modelNN.begin()) {    //Init tf model
     Serial.print("Error in NN initialization: ");
     Serial.println(modelNN.getErrorMessage());
@@ -206,7 +198,6 @@ void setup() {
 }
 
 void loop(){
-  Button.tick();
   unsigned long currentMillis = millis();  // Get the current time
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;  // Update the previous time
@@ -235,7 +226,33 @@ void loop(){
     
     float in[5] = {fval0, fval1, fval2, fval3, fval4};
     float out = modelNN.predict(in); 
-    Serial.println(out);
+    int pred = round(out);
+    float conf = 1-abs(out - pred);
+    if(0<=pred<=18){
+      Quaternion qfin00 = {qfins00[pred][0], qfins00[pred][1], qfins00[pred][2], qfins00[pred][3]};
+      Quaternion qfin01 = {qfins01[pred][0], qfins01[pred][1], qfins01[pred][2], qfins01[pred][3]};
+      Quaternion qfin1 = {qfins1[pred][0], qfins1[pred][1], qfins1[pred][2], qfins1[pred][3]};
+      Quaternion qfin2 = {qfins2[pred][0], qfins2[pred][1], qfins2[pred][2], qfins2[pred][3]};
+      Quaternion qfin3 = {qfins3[pred][0], qfins3[pred][1], qfins3[pred][2], qfins3[pred][3]};
+      Quaternion qfin4 = {qfins4[pred][0], qfins4[pred][1], qfins4[pred][2], qfins4[pred][3]};
+      //qfin00 = scaleQuat(qfin00, conf);
+
+      //Send the data
+      //[w00,x00,y00,z00...w4,x4,y4,z4]
+      Serial.print(String(qfin00.w,4)+", "+String(qfin00.x,4)+", "+String(qfin00.y,4)+", "+String(qfin00.z, 4)+", ");
+      Serial.print(String(qfin01.w,4)+", "+String(qfin01.x,4)+", "+String(qfin01.y,4)+", "+String(qfin01.z, 4)+", ");
+      Serial.print(String(qfin1.w,4)+", "+String(qfin1.x,4)+", "+String(qfin1.y,4)+", "+String(qfin1.z, 4)+", ");
+      Serial.print(String(qfin2.w,4)+", "+String(qfin2.x,4)+", "+String(qfin2.y,4)+", "+String(qfin2.z, 4)+", ");
+      Serial.print(String(qfin3.w,4)+", "+String(qfin3.x,4)+", "+String(qfin3.y,4)+", "+String(qfin3.z, 4)+", ");
+      Serial.print(String(qfin4.w,4)+", "+String(qfin4.x,4)+", "+String(qfin4.y,4)+", "+String(qfin4.z, 4));
+      Serial.println("");
+    }
+    /*
+    Serial.print("Prediction: ");
+    Serial.print(pred);
+    Serial.print(", conf: ");
+    Serial.println(conf);
     //Serial.print(String(fval0,2)+","+String(fval1,2)+","+String(fval2,2)+","+String(fval3,2)+","+String(fval4,2)+"\n");
+    */
    }
 }
