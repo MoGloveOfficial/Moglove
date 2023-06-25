@@ -15,7 +15,6 @@ index = 1
 middle = 2
 ring = 3
 pinky = 4
-
 """
 
 import time
@@ -28,12 +27,10 @@ from bpy.props import PointerProperty
 #bone_list = ["親指０.R","人指１.R","中指１.R","薬指１.R","小指１.R"]
 bone_list = ["親指０.L","親指１.L","人指１.L","中指１.L","薬指１.L","小指１.L"]
 
-
 recordStatus = 0
 
 sampleRate = 1/60
 FPS = 1/sampleRate
-
 
 class MyProperties(bpy.types.PropertyGroup):
     portR : bpy.props.IntProperty(name= "COM Port R")
@@ -105,12 +102,14 @@ class ModalTimerOperator(bpy.types.Operator):
                 raw = arduino.readline().decode('utf-8').rstrip().split(',')
                 if len(raw) == 24:
                     data = list(map(float, raw))
+                    print(data)
                     break
                 else:
                     pass
 
-            for bone_name, fin in enumerate(bone_list):
+            for fin, bone_name in enumerate(bone_list):
                 try:
+                    print("Bone name")
                     print(bone_name)
                     bone = armature.bones.get(bone_name)
                     print(bone)
