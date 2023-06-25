@@ -1,5 +1,6 @@
 /*"MoGlove" machine trained flex based mocap glove
  * 
+ * 
  * The MoGlove Project
  * Licensed under Creative Commons
  * 
@@ -9,6 +10,7 @@
 #include "patterns.h"
 #include "quaternion.h"
 #include <filters.h>
+#include <BluetoothSerial.h>
 
 
 const int fin0 = 34;  // Pin for analog input 1 thumb
@@ -59,6 +61,8 @@ float lowerThres = 6000.0;
 const unsigned long calTime = 3000; //Hold for 3 seconds
 unsigned long startTime = 0;
 
+const int res = 6;    //Resolution of quaternion output
+
 unsigned long previousMillis = 0;   // Previous time value
 const unsigned long interval = 10;  // Sampling time interval in milliseconds
 const float cutoff_freq   = 10.0;  //Cutoff frequency in Hz
@@ -72,6 +76,14 @@ Filter f1(cutoff_freq, sampling_time, order);
 Filter f2(cutoff_freq, sampling_time, order);
 Filter f3(cutoff_freq, sampling_time, order);
 Filter f4(cutoff_freq, sampling_time, order);
+
+BluetoothSerial SerialBT;
+
+void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param){
+  if(event == ESP_SPP_SRV_OPEN_EVT){
+    Serial.println("Client Connected");
+  }
+}
 
 void readFlex(float* fingers) {
   fingers[0] = f0.filterIn(analogRead(fin0));
@@ -189,10 +201,12 @@ void calFlex(){
 
 void setup() {
   Serial.begin(115200);  // Initialize serial communication for debugging
+  SerialBT.begin("MoGloveML");  
   while (!modelNN.begin()) {    //Init tf model
     Serial.print("Error in NN initialization: ");
     Serial.println(modelNN.getErrorMessage());
     }
+    
   calFlex();          //Calibrate fingers
   delay(1000);        // Wait for serial to stabilize
 }
@@ -228,6 +242,7 @@ void loop(){
     float out = modelNN.predict(in); 
     int pred = round(out);
     float conf = 1-abs(out - pred);
+    Serial.println(pred);
     if(0<=pred<=18){
       Quaternion qfin00 = {qfins00[pred][0], qfins00[pred][1], qfins00[pred][2], qfins00[pred][3]};
       Quaternion qfin01 = {qfins01[pred][0], qfins01[pred][1], qfins01[pred][2], qfins01[pred][3]};
@@ -236,16 +251,21 @@ void loop(){
       Quaternion qfin3 = {qfins3[pred][0], qfins3[pred][1], qfins3[pred][2], qfins3[pred][3]};
       Quaternion qfin4 = {qfins4[pred][0], qfins4[pred][1], qfins4[pred][2], qfins4[pred][3]};
       //qfin00 = scaleQuat(qfin00, conf);
+      //qfin01 = scaleQuat(qfin01, conf);
+      //qfin1 = scaleQuat(qfin1, conf);
+      //qfin2 = scaleQuat(qfin2, conf);
+      //qfin3 = scaleQuat(qfin3, conf);
+      //qfin4 = scaleQuat(qfin4, conf);
+      
 
       //Send the data
       //[w00,x00,y00,z00...w4,x4,y4,z4]
-      Serial.print(String(qfin00.w,4)+", "+String(qfin00.x,4)+", "+String(qfin00.y,4)+", "+String(qfin00.z, 4)+", ");
-      Serial.print(String(qfin01.w,4)+", "+String(qfin01.x,4)+", "+String(qfin01.y,4)+", "+String(qfin01.z, 4)+", ");
-      Serial.print(String(qfin1.w,4)+", "+String(qfin1.x,4)+", "+String(qfin1.y,4)+", "+String(qfin1.z, 4)+", ");
-      Serial.print(String(qfin2.w,4)+", "+String(qfin2.x,4)+", "+String(qfin2.y,4)+", "+String(qfin2.z, 4)+", ");
-      Serial.print(String(qfin3.w,4)+", "+String(qfin3.x,4)+", "+String(qfin3.y,4)+", "+String(qfin3.z, 4)+", ");
-      Serial.print(String(qfin4.w,4)+", "+String(qfin4.x,4)+", "+String(qfin4.y,4)+", "+String(qfin4.z, 4));
-      Serial.println("");
+      SerialBT.print(String(qfin00.w,res)+", "+String(qfin00.x,res)+", "+String(qfin00.y,res)+", "+String(qfin00.z,res)+", ");
+      SerialBT.print(String(qfin01.w,res)+", "+String(qfin01.x,res)+", "+String(qfin01.y,res)+", "+String(qfin01.z,res)+", ");
+      SerialBT.print(String(qfin1.w,res)+", "+String(qfin1.x,res)+", "+String(qfin1.y,res)+", "+String(qfin1.z,res)+", ");
+      SerialBT.print(String(qfin2.w,res)+", "+String(qfin2.x,res)+", "+String(qfin2.y,res)+", "+String(qfin2.z,res)+", ");
+      SerialBT.print(String(qfin3.w,res)+", "+String(qfin3.x,res)+", "+String(qfin3.y,res)+", "+String(qfin3.z,res)+", ");
+      SerialBT.println(String(qfin4.w,res)+", "+String(qfin4.x,res)+", "+String(qfin4.y,res)+", "+String(qfin4.z,res));
     }
     /*
     Serial.print("Prediction: ");
