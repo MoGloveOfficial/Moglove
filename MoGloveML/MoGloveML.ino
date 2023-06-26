@@ -12,7 +12,6 @@
 #include <filters.h>
 #include <BluetoothSerial.h>
 
-
 const int fin0 = 34;  // Pin for analog input 1 thumb
 const int fin1 = 35;  // Pin for analog input 2 index
 const int fin2 = 32;  // Pin for analog input 3 middle
@@ -67,20 +66,50 @@ unsigned long previousMillis = 0;   // Previous time value
 const unsigned long interval = 10;  // Sampling time interval in milliseconds
 const float cutoff_freq   = 10.0;  //Cutoff frequency in Hz
 const float sampling_time = 0.01; //Sampling time in seconds.
-IIR::ORDER  order  = IIR::ORDER::OD3; // Order (OD1 to OD4) Higher => Smoother but more latency
+IIR::ORDER  order  = IIR::ORDER::OD3; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
+IIR::ORDER  order2  = IIR::ORDER::OD4; // filter order for output
 
-
-// Low-pass filter for each fingers
+// (INPUT) Low-pass filter for each fingers
 Filter f0(cutoff_freq, sampling_time, order);
 Filter f1(cutoff_freq, sampling_time, order);
 Filter f2(cutoff_freq, sampling_time, order);
 Filter f3(cutoff_freq, sampling_time, order);
 Filter f4(cutoff_freq, sampling_time, order);
 
-Filter qfin00(cutoff_freq, sampling_time, order);
-Filter qfin00(cutoff_freq, sampling_time, order);
-Filter qfin00(cutoff_freq, sampling_time, order);
+// (OUTPUT) Low pass filter for each quats (Fuck thats awful)
+Filter qfin00w(cutoff_freq, sampling_time, order2);
+Filter qfin00x(cutoff_freq, sampling_time, order2);
+Filter qfin00y(cutoff_freq, sampling_time, order2);
+Filter qfin00z(cutoff_freq, sampling_time, order2);
 
+Filter qfin01w(cutoff_freq, sampling_time, order2);
+Filter qfin01x(cutoff_freq, sampling_time, order2);
+Filter qfin01y(cutoff_freq, sampling_time, order2);
+Filter qfin01z(cutoff_freq, sampling_time, order2);
+
+Filter qfin1w(cutoff_freq, sampling_time, order2);
+Filter qfin1x(cutoff_freq, sampling_time, order2);
+Filter qfin1y(cutoff_freq, sampling_time, order2);
+Filter qfin1z(cutoff_freq, sampling_time, order2);
+
+Filter qfin2w(cutoff_freq, sampling_time, order2);
+Filter qfin2x(cutoff_freq, sampling_time, order2);
+Filter qfin2y(cutoff_freq, sampling_time, order2);
+Filter qfin2z(cutoff_freq, sampling_time, order2);
+
+Filter qfin3w(cutoff_freq, sampling_time, order2);
+Filter qfin3x(cutoff_freq, sampling_time, order2);
+Filter qfin3y(cutoff_freq, sampling_time, order2);
+Filter qfin3z(cutoff_freq, sampling_time, order2);
+
+Filter qfin4w(cutoff_freq, sampling_time, order2);
+Filter qfin4x(cutoff_freq, sampling_time, order2);
+Filter qfin4y(cutoff_freq, sampling_time, order2);
+Filter qfin4z(cutoff_freq, sampling_time, order2);
+
+//Weight
+float cw = 1.0;   //Confidence weight
+float bw = 1.0;   //Bendiness weight
 
 BluetoothSerial SerialBT;
 
@@ -236,7 +265,7 @@ void loop(){
     float fval4 = f4.filterIn(val4);
 
     //nm -> normalized in trained dataset
-    
+
     fval0 = map(fval0, min0,max0,0,1000)/1000.0;
     float fval0nm = (fval0-lower0)/dif0;
     fval1 = map(fval1, min1,max1,0,1000)/1000.0;
@@ -247,7 +276,7 @@ void loop(){
     float fval3nm = (fval3-lower3)/dif3;    
     fval4 = map(fval4, min4,max4,0,1000)/1000.0;
     float fval4nm = (fval4-lower4)/dif4;
-    
+
     float in[5] = {fval0nm, fval1nm, fval2nm, fval3nm, fval4nm};
     float out = modelNN.predict(in); 
     int pred = round(out);
@@ -256,28 +285,30 @@ void loop(){
     Serial.print(pred);
     Serial.print(", conf: ");
     Serial.println(conf);
-    
+
     if((0<=pred)&&(pred<=18)){
-      //Qout = (A*Qbend) + (B*conf*qtr)
+      //Qout = (A*Qbend) + (B*conf*qpat)
       //* => Scalar multiplication of quaternion
       //+ => Quaternion addition
       //A&B are tuning variables...
       
-      //fin01 = > [1,0,0,-1]
-      //fin1 => [1,1.15,0,0]
-      //fin2 => [1,0,0,0];
+      //fin01 = > [1,0,0,-1.15]
+      //fin1 => [1,1.25,0,0]
       
-      Quaternion qbend01 = {1.0f, 0.0f, 0.0f, -fval0};
+      //Obtain Bend Quaternion
+      Quaternion qbend01 = {1.0f, 0.0f, 0.0f, 1.15*-fval0};
       normQuat(qbend01);
-      Quaternion qbend1 = {1.0f, 1.15f * fval1, 0.0f, 0.0f};
+      Quaternion qbend1 = {1.0f, 1.25f * fval1, 0.0f, 0.0f};
       normQuat(qbend1);
-      Quaternion qbend2 = {1.0f, 1.15f * fval2, 0.0f, 0.0f};
+      Quaternion qbend2 = {1.0f, 1.25f * fval2, 0.0f, 0.0f};
       normQuat(qbend2);
-      Quaternion qbend3 = {1.0f, 1.15f * fval3, 0.0f, 0.0f};
+      Quaternion qbend3 = {1.0f, 1.25f * fval3, 0.0f, 0.0f};
       normQuat(qbend3);
-      Quaternion qbend4 = {1.0f, 1.15f * fval4, 0.0f, 0.0f};
+      Quaternion qbend4 = {1.0f, 1.25f * fval4, 0.0f, 0.0f};
       normQuat(qbend4);
+
       
+      //Obtain Pattern Quaternion
       Quaternion qfin00 = {qfins00[pred][0], qfins00[pred][1], qfins00[pred][2], qfins00[pred][3]};
       Quaternion qfin01 = {qfins01[pred][0], qfins01[pred][1], qfins01[pred][2], qfins01[pred][3]};
       Quaternion qfin1 = {qfins1[pred][0], qfins1[pred][1], qfins1[pred][2], qfins1[pred][3]};
@@ -285,13 +316,25 @@ void loop(){
       Quaternion qfin3 = {qfins3[pred][0], qfins3[pred][1], qfins3[pred][2], qfins3[pred][3]};
       Quaternion qfin4 = {qfins4[pred][0], qfins4[pred][1], qfins4[pred][2], qfins4[pred][3]};
       
-      qfin00 = scaleQuat(qfin00, conf);
-      qfin01 = scaleQuat(qfin01, conf);
-      qfin1 = scaleQuat(qfin1, conf);
-      qfin2 = scaleQuat(qfin2, conf);
-      qfin3 = scaleQuat(qfin3, conf);
-      qfin4 = scaleQuat(qfin4, conf);
-      
+      //cw => confidence weight
+      //bw => bendiness weight
+      /*
+      //Scale pattern Quaternion by confidence factor and confidence weight
+      qfin00 = scaleQuat(qfin00, cw*conf);
+      qfin01 = scaleQuat(qfin01, cw*conf);
+      qfin1 = scaleQuat(qfin1, cw*conf);
+      qfin2 = scaleQuat(qfin2, cw*conf);
+      qfin3 = scaleQuat(qfin3, cw*conf);
+      qfin4 = scaleQuat(qfin4, cw*conf);
+      //Scale the pattern Quaternion by bendiness weight
+      qbend01 = scaleQuat(qbend01, bw);
+      qbend1 = scaleQuat(qbend1, bw);
+      qbend2 = scaleQuat(qbend2, bw);
+      qbend3 = scaleQuat(qbend3, bw);
+      qbend4 = scaleQuat(qbend4, bw);
+      */
+      //Combine the effect of Pattern quat and Bend quat
+
       qfin01 = add2Quats(qfin01, qbend01);
       qfin1 = add2Quats(qfin1,qbend1);
       qfin2 = add2Quats(qfin2,qbend2);
@@ -299,6 +342,35 @@ void loop(){
       qfin4 = add2Quats(qfin4,qbend4);
 
       //Filter the output
+      qfin00.w = qfin00w.filterIn(qfin00.w);
+      qfin00.x = qfin00x.filterIn(qfin00.x);
+      qfin00.y = qfin00y.filterIn(qfin00.y);
+      qfin00.z = qfin00z.filterIn(qfin00.z);
+
+      qfin01.w = qfin01w.filterIn(qfin01.w);
+      qfin01.x = qfin01x.filterIn(qfin01.x);
+      qfin01.y = qfin01y.filterIn(qfin01.y);
+      qfin01.z = qfin01z.filterIn(qfin01.z);
+
+      qfin1.w = qfin1w.filterIn(qfin1.w);
+      qfin1.x = qfin1x.filterIn(qfin1.x);
+      qfin1.y = qfin1y.filterIn(qfin1.y);
+      qfin1.z = qfin1z.filterIn(qfin1.z);
+
+      qfin2.w = qfin2w.filterIn(qfin2.w);
+      qfin2.x = qfin2x.filterIn(qfin2.x);
+      qfin2.y = qfin2y.filterIn(qfin2.y);
+      qfin2.z = qfin2z.filterIn(qfin2.z);
+
+      qfin3.w = qfin3w.filterIn(qfin3.w);
+      qfin3.x = qfin3x.filterIn(qfin3.x);
+      qfin3.y = qfin3y.filterIn(qfin3.y);
+      qfin3.z = qfin3z.filterIn(qfin3.z);
+
+      qfin4.w = qfin4w.filterIn(qfin4.w);
+      qfin4.x = qfin4x.filterIn(qfin4.x);
+      qfin4.y = qfin4y.filterIn(qfin4.y);
+      qfin4.z = qfin4z.filterIn(qfin4.z);
       
       //Send the data
       //[w00,x00,y00,z00...w4,x4,y4,z4]
@@ -308,6 +380,26 @@ void loop(){
       SerialBT.print(String(qfin2.w,res)+", "+String(qfin2.x,res)+", "+String(qfin2.y,res)+", "+String(qfin2.z,res)+", ");
       SerialBT.print(String(qfin3.w,res)+", "+String(qfin3.x,res)+", "+String(qfin3.y,res)+", "+String(qfin3.z,res)+", ");
       SerialBT.println(String(qfin4.w,res)+", "+String(qfin4.x,res)+", "+String(qfin4.y,res)+", "+String(qfin4.z,res));
+    }
+    //If no pattern match found
+    else{
+      //Obtain Bend Quaternion
+      Quaternion qbend01 = {1.0f, 0.0f, 0.0f, 1.25*-fval0};
+      normQuat(qbend01);
+      Quaternion qbend1 = {1.0f, 1.5f * fval1, 0.0f, 0.0f};
+      normQuat(qbend1);
+      Quaternion qbend2 = {1.0f, 1.5f * fval2, 0.0f, 0.0f};
+      normQuat(qbend2);
+      Quaternion qbend3 = {1.0f, 1.5f * fval3, 0.0f, 0.0f};
+      normQuat(qbend3);
+      Quaternion qbend4 = {1.0f, 1.5f * fval4, 0.0f, 0.0f};
+      normQuat(qbend4);
+
+      qbend01 = scaleQuat(qbend01, bw);
+      qbend1 = scaleQuat(qbend1, bw);
+      qbend2 = scaleQuat(qbend2, bw);
+      qbend3 = scaleQuat(qbend3, bw);
+      qbend4 = scaleQuat(qbend4, bw);
     }
     /*
     Serial.print("Prediction: ");
