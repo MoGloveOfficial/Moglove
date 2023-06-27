@@ -67,7 +67,9 @@ const unsigned long interval = 10;  // Sampling time interval in milliseconds
 const float cutoff_freq   = 10.0;  //Cutoff frequency in Hz
 const float sampling_time = 0.01; //Sampling time in seconds.
 IIR::ORDER  order  = IIR::ORDER::OD3; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
-IIR::ORDER  order2  = IIR::ORDER::OD4; // filter order for output
+
+const float cutoff_freq_out   = 10.0;
+IIR::ORDER  order_out  = IIR::ORDER::OD4; // filter order for output
 
 // (INPUT) Low-pass filter for each fingers
 Filter f0(cutoff_freq, sampling_time, order);
@@ -77,35 +79,35 @@ Filter f3(cutoff_freq, sampling_time, order);
 Filter f4(cutoff_freq, sampling_time, order);
 
 // (OUTPUT) Low pass filter for each quats (Fuck thats awful)
-Filter qfin00w(cutoff_freq, sampling_time, order2);
-Filter qfin00x(cutoff_freq, sampling_time, order2);
-Filter qfin00y(cutoff_freq, sampling_time, order2);
-Filter qfin00z(cutoff_freq, sampling_time, order2);
+Filter qfin00w(cutoff_freq_out, sampling_time, order_out);
+Filter qfin00x(cutoff_freq_out, sampling_time, order_out);
+Filter qfin00y(cutoff_freq_out, sampling_time, order_out);
+Filter qfin00z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qfin01w(cutoff_freq, sampling_time, order2);
-Filter qfin01x(cutoff_freq, sampling_time, order2);
-Filter qfin01y(cutoff_freq, sampling_time, order2);
-Filter qfin01z(cutoff_freq, sampling_time, order2);
+Filter qfin01w(cutoff_freq_out, sampling_time, order_out);
+Filter qfin01x(cutoff_freq_out, sampling_time, order_out);
+Filter qfin01y(cutoff_freq_out, sampling_time, order_out);
+Filter qfin01z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qfin1w(cutoff_freq, sampling_time, order2);
-Filter qfin1x(cutoff_freq, sampling_time, order2);
-Filter qfin1y(cutoff_freq, sampling_time, order2);
-Filter qfin1z(cutoff_freq, sampling_time, order2);
+Filter qfin1w(cutoff_freq_out, sampling_time, order_out);
+Filter qfin1x(cutoff_freq_out, sampling_time, order_out);
+Filter qfin1y(cutoff_freq_out, sampling_time, order_out);
+Filter qfin1z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qfin2w(cutoff_freq, sampling_time, order2);
-Filter qfin2x(cutoff_freq, sampling_time, order2);
-Filter qfin2y(cutoff_freq, sampling_time, order2);
-Filter qfin2z(cutoff_freq, sampling_time, order2);
+Filter qfin2w(cutoff_freq_out, sampling_time, order_out);
+Filter qfin2x(cutoff_freq_out, sampling_time, order_out);
+Filter qfin2y(cutoff_freq_out, sampling_time, order_out);
+Filter qfin2z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qfin3w(cutoff_freq, sampling_time, order2);
-Filter qfin3x(cutoff_freq, sampling_time, order2);
-Filter qfin3y(cutoff_freq, sampling_time, order2);
-Filter qfin3z(cutoff_freq, sampling_time, order2);
+Filter qfin3w(cutoff_freq_out, sampling_time, order_out);
+Filter qfin3x(cutoff_freq_out, sampling_time, order_out);
+Filter qfin3y(cutoff_freq_out, sampling_time, order_out);
+Filter qfin3z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qfin4w(cutoff_freq, sampling_time, order2);
-Filter qfin4x(cutoff_freq, sampling_time, order2);
-Filter qfin4y(cutoff_freq, sampling_time, order2);
-Filter qfin4z(cutoff_freq, sampling_time, order2);
+Filter qfin4w(cutoff_freq_out, sampling_time, order_out);
+Filter qfin4x(cutoff_freq_out, sampling_time, order_out);
+Filter qfin4y(cutoff_freq_out, sampling_time, order_out);
+Filter qfin4z(cutoff_freq_out, sampling_time, order_out);
 
 //Weight
 float cw = 1.0;   //Confidence weight
@@ -401,12 +403,12 @@ void loop(){
       qbend3 = scaleQuat(qbend3, bw);
       qbend4 = scaleQuat(qbend4, bw);
     }
-    /*
-    Serial.print("Prediction: ");
-    Serial.print(pred);
-    Serial.print(", conf: ");
-    Serial.println(conf);
-    //Serial.print(String(fval0,2)+","+String(fval1,2)+","+String(fval2,2)+","+String(fval3,2)+","+String(fval4,2)+"\n");
-    */
+    //Send the output
+    SerialBT.print(String(qfin00.w,res)+", "+String(qfin00.x,res)+", "+String(qfin00.y,res)+", "+String(qfin00.z,res)+", ");
+    SerialBT.print(String(qfin01.w,res)+", "+String(qfin01.x,res)+", "+String(qfin01.y,res)+", "+String(qfin01.z,res)+", ");
+    SerialBT.print(String(qfin1.w,res)+", "+String(qfin1.x,res)+", "+String(qfin1.y,res)+", "+String(qfin1.z,res)+", ");
+    SerialBT.print(String(qfin2.w,res)+", "+String(qfin2.x,res)+", "+String(qfin2.y,res)+", "+String(qfin2.z,res)+", ");
+    SerialBT.print(String(qfin3.w,res)+", "+String(qfin3.x,res)+", "+String(qfin3.y,res)+", "+String(qfin3.z,res)+", ");
+    SerialBT.println(String(qfin4.w,res)+", "+String(qfin4.x,res)+", "+String(qfin4.y,res)+", "+String(qfin4.z,res));
    }
 }
