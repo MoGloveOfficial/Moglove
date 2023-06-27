@@ -1,5 +1,6 @@
 /*"MoGlove" machine trained flex based mocap glove
  * 
+ * I would like to sincerly appologise for my terrible code. This was intentionally done to avoid reverse engineering XD
  * 
  * The MoGlove Project
  * Licensed under Creative Commons
@@ -60,15 +61,16 @@ float lowerThres = 6000.0;
 const unsigned long calTime = 3000; //Hold for 3 seconds
 unsigned long startTime = 0;
 
-const int res = 6;    //Resolution of quaternion output
+const int res = 4;    //Resolution of quaternion output
+int prevPred;
 
 unsigned long previousMillis = 0;   // Previous time value
 const unsigned long interval = 10;  // Sampling time interval in milliseconds
 const float cutoff_freq   = 10.0;  //Cutoff frequency in Hz
 const float sampling_time = 0.01; //Sampling time in seconds.
-IIR::ORDER  order  = IIR::ORDER::OD3; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
+IIR::ORDER  order  = IIR::ORDER::OD2; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
 
-const float cutoff_freq_out   = 5.0;
+const float cutoff_freq_out   = 10.0;
 IIR::ORDER  order_out  = IIR::ORDER::OD2; // filter order for output
 
 // (INPUT) Low-pass filter for each fingers
@@ -78,7 +80,7 @@ Filter f2(cutoff_freq, sampling_time, order);
 Filter f3(cutoff_freq, sampling_time, order);
 Filter f4(cutoff_freq, sampling_time, order);
 
-// (OUTPUT) Low pass filter for each quats (Fuck thats awful)
+// (OUTPUT) Low pass filter for each quats of each fingers... (Fuck thats awful)
 Filter qout00w(cutoff_freq_out, sampling_time, order_out);
 Filter qout00x(cutoff_freq_out, sampling_time, order_out);
 Filter qout00y(cutoff_freq_out, sampling_time, order_out);
@@ -89,29 +91,70 @@ Filter qout01x(cutoff_freq_out, sampling_time, order_out);
 Filter qout01y(cutoff_freq_out, sampling_time, order_out);
 Filter qout01z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qout1w(cutoff_freq_out, sampling_time, order_out);
-Filter qout1x(cutoff_freq_out, sampling_time, order_out);
-Filter qout1y(cutoff_freq_out, sampling_time, order_out);
-Filter qout1z(cutoff_freq_out, sampling_time, order_out);
+Filter qout02w(cutoff_freq_out, sampling_time, order_out);
+Filter qout02x(cutoff_freq_out, sampling_time, order_out);
+Filter qout02y(cutoff_freq_out, sampling_time, order_out);
+Filter qout02z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qout2w(cutoff_freq_out, sampling_time, order_out);
-Filter qout2x(cutoff_freq_out, sampling_time, order_out);
-Filter qout2y(cutoff_freq_out, sampling_time, order_out);
-Filter qout2z(cutoff_freq_out, sampling_time, order_out);
+Filter qout11w(cutoff_freq_out, sampling_time, order_out);
+Filter qout11x(cutoff_freq_out, sampling_time, order_out);
+Filter qout11y(cutoff_freq_out, sampling_time, order_out);
+Filter qout11z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qout3w(cutoff_freq_out, sampling_time, order_out);
-Filter qout3x(cutoff_freq_out, sampling_time, order_out);
-Filter qout3y(cutoff_freq_out, sampling_time, order_out);
-Filter qout3z(cutoff_freq_out, sampling_time, order_out);
+Filter qout12w(cutoff_freq_out, sampling_time, order_out);
+Filter qout12x(cutoff_freq_out, sampling_time, order_out);
+Filter qout12y(cutoff_freq_out, sampling_time, order_out);
+Filter qout12z(cutoff_freq_out, sampling_time, order_out);
 
-Filter qout4w(cutoff_freq_out, sampling_time, order_out);
-Filter qout4x(cutoff_freq_out, sampling_time, order_out);
-Filter qout4y(cutoff_freq_out, sampling_time, order_out);
-Filter qout4z(cutoff_freq_out, sampling_time, order_out);
+Filter qout13w(cutoff_freq_out, sampling_time, order_out);
+Filter qout13x(cutoff_freq_out, sampling_time, order_out);
+Filter qout13y(cutoff_freq_out, sampling_time, order_out);
+Filter qout13z(cutoff_freq_out, sampling_time, order_out);
 
-//Weight  Perhaps bw = 1-cw?
-float cw = 1.0;   //Confidence weight
-float bw = 1.0;   //Bendiness weight
+Filter qout21w(cutoff_freq_out, sampling_time, order_out);
+Filter qout21x(cutoff_freq_out, sampling_time, order_out);
+Filter qout21y(cutoff_freq_out, sampling_time, order_out);
+Filter qout21z(cutoff_freq_out, sampling_time, order_out);
+
+Filter qout22w(cutoff_freq_out, sampling_time, order_out);
+Filter qout22x(cutoff_freq_out, sampling_time, order_out);
+Filter qout22y(cutoff_freq_out, sampling_time, order_out);
+Filter qout22z(cutoff_freq_out, sampling_time, order_out);
+
+Filter qout23w(cutoff_freq_out, sampling_time, order_out);
+Filter qout23x(cutoff_freq_out, sampling_time, order_out);
+Filter qout23y(cutoff_freq_out, sampling_time, order_out);
+Filter qout23z(cutoff_freq_out, sampling_time, order_out);
+
+Filter qout31w(cutoff_freq_out, sampling_time, order_out);
+Filter qout31x(cutoff_freq_out, sampling_time, order_out);
+Filter qout31y(cutoff_freq_out, sampling_time, order_out);
+Filter qout31z(cutoff_freq_out, sampling_time, order_out);
+
+Filter qout32w(cutoff_freq_out, sampling_time, order_out);
+Filter qout32x(cutoff_freq_out, sampling_time, order_out);
+Filter qout32y(cutoff_freq_out, sampling_time, order_out);
+Filter qout32z(cutoff_freq_out, sampling_time, order_out);
+
+Filter qout33w(cutoff_freq_out, sampling_time, order_out);
+Filter qout33x(cutoff_freq_out, sampling_time, order_out);
+Filter qout33y(cutoff_freq_out, sampling_time, order_out);
+Filter qout33z(cutoff_freq_out, sampling_time, order_out);
+
+Filter qout41w(cutoff_freq_out, sampling_time, order_out);
+Filter qout41x(cutoff_freq_out, sampling_time, order_out);
+Filter qout41y(cutoff_freq_out, sampling_time, order_out);
+Filter qout41z(cutoff_freq_out, sampling_time, order_out);
+
+Filter qout42w(cutoff_freq_out, sampling_time, order_out);
+Filter qout42x(cutoff_freq_out, sampling_time, order_out);
+Filter qout42y(cutoff_freq_out, sampling_time, order_out);
+Filter qout42z(cutoff_freq_out, sampling_time, order_out);
+
+Filter qout43w(cutoff_freq_out, sampling_time, order_out);
+Filter qout43x(cutoff_freq_out, sampling_time, order_out);
+Filter qout43y(cutoff_freq_out, sampling_time, order_out);
+Filter qout43z(cutoff_freq_out, sampling_time, order_out);
 
 BluetoothSerial SerialBT;
 
@@ -282,11 +325,94 @@ void loop(){
     float in[5] = {fval0nm, fval1nm, fval2nm, fval3nm, fval4nm};
     float out = modelNN.predict(in); 
     int pred = round(out);
-    float conf = 1-abs(out - pred);
+    float cw = 1-2*abs(out - pred);
+    float bw = 1-cw;
+    /* Debounce pattern (to be implemented
+    if(prev_pat_timer - pat_timer > pat_duration){
+      
+    }
+    if(pred!=prevPred){ //if pattern changes
+      //Smoothing
+      unsigned long pat_timer = millis();
+      cutoff_freq_out   = 1.0;
+      order_out  = IIR::ORDER::OD3; // filter order for output
+    }
+    prevPred = pred
+    */
     Serial.print("Prediction: ");
     Serial.print(pred);
     Serial.print(", conf: ");
-    Serial.println(conf);
+    Serial.println(cw);
+    Quaternion qout00;
+    Quaternion qout01;
+    Quaternion qout02;
+    
+    Quaternion qout11;
+    Quaternion qout12;
+    Quaternion qout13;
+    
+    Quaternion qout21;
+    Quaternion qout22;
+    Quaternion qout23;
+    
+    Quaternion qout31;
+    Quaternion qout32;
+    Quaternion qout33;
+    
+    Quaternion qout41;
+    Quaternion qout42;
+    Quaternion qout43;
+
+    //Hard coding the curl bone rig so u dont have to rig it urself ;D
+    Quaternion qbend00 = {1.0f, 0.0f, 0.0f, 0.15*-fval0};
+    normQuat(qbend00);
+    Quaternion qbend01 = {1.0f,0.0f, 0.0f, 0.75*-fval0};
+    normQuat(qbend01);
+    Quaternion qbend02 = {1.0f,0.0f,0.0f, -fval0};
+    normQuat(qbend02);
+    
+    Quaternion qbend11 = {1.0f, 1.25*fval1, 0.0f, 0.0f};
+    normQuat(qbend11);
+    Quaternion qbend12 = {1.0f,1.25*fval1,0.0f,0.0f};
+    normQuat(qbend12);
+    Quaternion qbend13 = {1.0f,fval1,0.0f,0.0f};
+    normQuat(qbend13);
+    
+    Quaternion qbend21 = {1.0f, 1.25*fval2, 0.0f, 0.0f};
+    normQuat(qbend21);
+    Quaternion qbend22 = {1.0f,1.25*fval2,0.0f,0.0f};
+    normQuat(qbend22);
+    Quaternion qbend23 = {1.0f,fval2,0.0f,0.0f};
+    normQuat(qbend23);
+    
+    Quaternion qbend31 = {1.0f, 1.25*fval3, 0.0f, 0.0f};
+    normQuat(qbend31);
+    Quaternion qbend32 = {1.0f,1.25*fval3,0.0f,0.0f};
+    normQuat(qbend32);
+    Quaternion qbend33 = {1.0f,fval3,0.0f,0.0f};
+    normQuat(qbend33);
+    
+    Quaternion qbend41 = {1.0f, 1.25*fval4, 0.0f, 0.0f};
+    normQuat(qbend41);
+    Quaternion qbend42 = {1.0f,1.25*fval4,0.0f,0.0f};
+    normQuat(qbend42);
+    Quaternion qbend43 = {1.0f,fval4,0.0f,0.0f};
+    normQuat(qbend43);
+    
+    /*
+    Quaternion qbend00 = {1.0f, 0.0f, 0.0f, 0.15*-fval0};
+    normQuat(qbend00);
+    Quaternion qbend01 = {1.0f, 0.0f, 0.0f, 1.15*-fval0};
+    normQuat(qbend01);
+    Quaternion qbend1 = {1.0f, 1.25f * fval1, 0.0f, 0.0f};
+    normQuat(qbend1);
+    Quaternion qbend2 = {1.0f, 1.25f * fval2, 0.0f, 0.0f};
+    normQuat(qbend2);
+    Quaternion qbend3 = {1.0f, 1.25f * fval3, 0.0f, 0.0f};
+    normQuat(qbend3);
+    Quaternion qbend4 = {1.0f, 1.25f * fval4, 0.0f, 0.0f};
+    normQuat(qbend4);
+    */
     if(0){
     //if((0<=pred)&&(pred<=18)){
       //Qout = (A*Qbend) + (B*conf*qpat)
@@ -296,154 +422,159 @@ void loop(){
       
       //fin01 = > [1,0,0,-1.15]
       //fin1 => [1,1.25,0,0]
-      
-      //Obtain Bend Quaternion
-      Quaternion qbend00 = {1.0f, 0.0f, 0.0f, 0.15*-fval0};
-      normQuat(qbend00);
-      Quaternion qbend01 = {1.0f, 0.0f, 0.0f, 1.15*-fval0};
-      normQuat(qbend01);
-      Quaternion qbend1 = {1.0f, 1.25f * fval1, 0.0f, 0.0f};
-      normQuat(qbend1);
-      Quaternion qbend2 = {1.0f, 1.25f * fval2, 0.0f, 0.0f};
-      normQuat(qbend2);
-      Quaternion qbend3 = {1.0f, 1.25f * fval3, 0.0f, 0.0f};
-      normQuat(qbend3);
-      Quaternion qbend4 = {1.0f, 1.25f * fval4, 0.0f, 0.0f};
-      normQuat(qbend4);
-
-      
       //Obtain Pattern Quaternion
-      Quaternion qfin00 = {qfins00[pred][0], qfins00[pred][1], qfins00[pred][2], qfins00[pred][3]};
-      Quaternion qfin01 = {qfins01[pred][0], qfins01[pred][1], qfins01[pred][2], qfins01[pred][3]};
-      Quaternion qfin1 = {qfins1[pred][0], qfins1[pred][1], qfins1[pred][2], qfins1[pred][3]};
-      Quaternion qfin2 = {qfins2[pred][0], qfins2[pred][1], qfins2[pred][2], qfins2[pred][3]};
-      Quaternion qfin3 = {qfins3[pred][0], qfins3[pred][1], qfins3[pred][2], qfins3[pred][3]};
-      Quaternion qfin4 = {qfins4[pred][0], qfins4[pred][1], qfins4[pred][2], qfins4[pred][3]};
+      /*
+      Quaternion qpat00 = {qfins00[pred][0], qfins00[pred][1], qfins00[pred][2], qfins00[pred][3]};
+      Quaternion qpat01 = {qfins01[pred][0], qfins01[pred][1], qfins01[pred][2], qfins01[pred][3]};
+      Quaternion qpat1 = {qfins1[pred][0], qfins1[pred][1], qfins1[pred][2], qfins1[pred][3]};
+      Quaternion qpat2 = {qfins2[pred][0], qfins2[pred][1], qfins2[pred][2], qfins2[pred][3]};
+      Quaternion qpat3 = {qfins3[pred][0], qfins3[pred][1], qfins3[pred][2], qfins3[pred][3]};
+      Quaternion qpat4 = {qfins4[pred][0], qfins4[pred][1], qfins4[pred][2], qfins4[pred][3]};
       
       //cw => confidence weight
       //bw => bendiness weight
-      /*
+
       //Scale pattern Quaternion by confidence factor and confidence weight
-      qfin00 = scaleQuat(qfin00, cw*conf);
-      qfin01 = scaleQuat(qfin01, cw*conf);
-      qfin1 = scaleQuat(qfin1, cw*conf);
-      qfin2 = scaleQuat(qfin2, cw*conf);
-      qfin3 = scaleQuat(qfin3, cw*conf);
-      qfin4 = scaleQuat(qfin4, cw*conf);
+      qpat00 = scaleQuat(qpat00, cw);
+      qpat01 = scaleQuat(qpat01, cw);
+      qpat1 = scaleQuat(qpat1, cw);
+      qpat2 = scaleQuat(qpat2, cw);
+      qpat3 = scaleQuat(qpat3, cw);
+      qpat4 = scaleQuat(qpat4, cw);
       //Scale the pattern Quaternion by bendiness weight
       qbend01 = scaleQuat(qbend01, bw);
-      qbend1 = scaleQuat(qbend1, bw);
+      qbend01 = scaleQuat(qbend01, bw);
       qbend2 = scaleQuat(qbend2, bw);
       qbend3 = scaleQuat(qbend3, bw);
       qbend4 = scaleQuat(qbend4, bw);
-      */
+
       //Combine the effect of Pattern quat and Bend quat
-      Quaternion qout00 = add2Quats(qfin00, qbend00);
-      Quaternion qout01 = add2Quats(qfin01, qbend01);
-      Quaternion qout1 = add2Quats(qfin1,qbend1);
-      Quaternion qout2 = add2Quats(qfin2,qbend2);
-      Quaternion qout3 = add2Quats(qfin3,qbend3);
-      Quaternion qout4 = add2Quats(qfin4,qbend4);
-
-      //Filter the output
-      qout00.w = qout00w.filterIn(qout00.w);
-      qout00.x = qout00x.filterIn(qout00.x);
-      qout00.y = qout00y.filterIn(qout00.y);
-      qout00.z = qout00z.filterIn(qout00.z);
-
-      qout01.w = qout01w.filterIn(qout01.w);
-      qout01.x = qout01x.filterIn(qout01.x);
-      qout01.y = qout01y.filterIn(qout01.y);
-      qout01.z = qout01z.filterIn(qout01.z);
-
-      qout1.w = qout1w.filterIn(qout1.w);
-      qout1.x = qout1x.filterIn(qout1.x);
-      qout1.y = qout1y.filterIn(qout1.y);
-      qout1.z = qout1z.filterIn(qout1.z);
-
-      qout2.w = qout2w.filterIn(qout2.w);
-      qout2.x = qout2x.filterIn(qout2.x);
-      qout2.y = qout2y.filterIn(qout2.y);
-      qout2.z = qout2z.filterIn(qout2.z);
-
-      qout3.w = qout3w.filterIn(qout3.w);
-      qout3.x = qout3x.filterIn(qout3.x);
-      qout3.y = qout3y.filterIn(qout3.y);
-      qout3.z = qout3z.filterIn(qout3.z);
-
-      qout4.w = qout4w.filterIn(qout4.w);
-      qout4.x = qout4x.filterIn(qout4.x);
-      qout4.y = qout4y.filterIn(qout4.y);
-      qout4.z = qout4z.filterIn(qout4.z);
-      //Send the output
-      SerialBT.print(String(qout00.w,res)+", "+String(qout00.x,res)+", "+String(qout00.y,res)+", "+String(qout00.z,res)+", ");
-      SerialBT.print(String(qout01.w,res)+", "+String(qout01.x,res)+", "+String(qout01.y,res)+", "+String(qout01.z,res)+", ");
-      SerialBT.print(String(qout1.w,res)+", "+String(qout1.x,res)+", "+String(qout1.y,res)+", "+String(qout1.z,res)+", ");
-      SerialBT.print(String(qout2.w,res)+", "+String(qout2.x,res)+", "+String(qout2.y,res)+", "+String(qout2.z,res)+", ");
-      SerialBT.print(String(qout3.w,res)+", "+String(qout3.x,res)+", "+String(qout3.y,res)+", "+String(qout3.z,res)+", ");
-      SerialBT.println(String(qout4.w,res)+", "+String(qout4.x,res)+", "+String(qout4.y,res)+", "+String(qout4.z,res));
+      qout00 = add2Quats(qpat00, qbend00);
+      qout01 = add2Quats(qpat01, qbend01);
+      qout1 = add2Quats(qpat1,qbend1);
+      qout2 = add2Quats(qpat2,qbend2);
+      qout3 = add2Quats(qpat3,qbend3);
+      qout4 = add2Quats(qpat4,qbend4);
+      */
     }
     //If no pattern match found
     else{
-      //Confidence = 0 => cw = 0, bw = 1;
-      //Obtain Bend Quaternion
-      Quaternion qbend00 = {1.0f, 0.0f, 0.0f, 0.15*-fval0};
-      normQuat(qbend00);
-      Quaternion qbend01 = {1.0f, 0.0f, 0.0f, 1.25*-fval0};
-      normQuat(qbend01);
-      Quaternion qbend1 = {1.0f, 1.5f * fval1, 0.0f, 0.0f};
-      normQuat(qbend1);
-      Quaternion qbend2 = {1.0f, 1.5f * fval2, 0.0f, 0.0f};
-      normQuat(qbend2);
-      Quaternion qbend3 = {1.0f, 1.5f * fval3, 0.0f, 0.0f};
-      normQuat(qbend3);
-      Quaternion qbend4 = {1.0f, 1.5f * fval4, 0.0f, 0.0f};
-      normQuat(qbend4);
-
-      Quaternion qout00 = scaleQuat(qbend00, bw);
-      Quaternion qout01 = scaleQuat(qbend01, bw);
-      Quaternion qout1 = scaleQuat(qbend1, bw);
-      Quaternion qout2 = scaleQuat(qbend2, bw);
-      Quaternion qout3 = scaleQuat(qbend3, bw);
-      Quaternion qout4 = scaleQuat(qbend4, bw);
-
-      qout00.w = qout00w.filterIn(qout00.w);
-      qout00.x = qout00x.filterIn(qout00.x);
-      qout00.y = qout00y.filterIn(qout00.y);
-      qout00.z = qout00z.filterIn(qout00.z);
-
-      qout01.w = qout01w.filterIn(qout01.w);
-      qout01.x = qout01x.filterIn(qout01.x);
-      qout01.y = qout01y.filterIn(qout01.y);
-      qout01.z = qout01z.filterIn(qout01.z);
-
-      qout1.w = qout1w.filterIn(qout1.w);
-      qout1.x = qout1x.filterIn(qout1.x);
-      qout1.y = qout1y.filterIn(qout1.y);
-      qout1.z = qout1z.filterIn(qout1.z);
-
-      qout2.w = qout2w.filterIn(qout2.w);
-      qout2.x = qout2x.filterIn(qout2.x);
-      qout2.y = qout2y.filterIn(qout2.y);
-      qout2.z = qout2z.filterIn(qout2.z);
-
-      qout3.w = qout3w.filterIn(qout3.w);
-      qout3.x = qout3x.filterIn(qout3.x);
-      qout3.y = qout3y.filterIn(qout3.y);
-      qout3.z = qout3z.filterIn(qout3.z);
-
-      qout4.w = qout4w.filterIn(qout4.w);
-      qout4.x = qout4x.filterIn(qout4.x);
-      qout4.y = qout4y.filterIn(qout4.y);
-      qout4.z = qout4z.filterIn(qout4.z);
-
-      //Send the output
-      SerialBT.print(String(qout00.w,res)+", "+String(qout00.x,res)+", "+String(qout00.y,res)+", "+String(qout00.z,res)+", ");
-      SerialBT.print(String(qout01.w,res)+", "+String(qout01.x,res)+", "+String(qout01.y,res)+", "+String(qout01.z,res)+", ");
-      SerialBT.print(String(qout1.w,res)+", "+String(qout1.x,res)+", "+String(qout1.y,res)+", "+String(qout1.z,res)+", ");
-      SerialBT.print(String(qout2.w,res)+", "+String(qout2.x,res)+", "+String(qout2.y,res)+", "+String(qout2.z,res)+", ");
-      SerialBT.print(String(qout3.w,res)+", "+String(qout3.x,res)+", "+String(qout3.y,res)+", "+String(qout3.z,res)+", ");
-      SerialBT.println(String(qout4.w,res)+", "+String(qout4.x,res)+", "+String(qout4.y,res)+", "+String(qout4.z,res));
+      bw = 1;
+      Quaternion qout00 = qbend00;
+      Quaternion qout01 = qbend01;
+      Quaternion qout02 = qbend02;
+      
+      Quaternion qout11 = qbend11;
+      Quaternion qout12 = qbend12;
+      Quaternion qout13 = qbend13;
+      
+      Quaternion qout21 = qbend21;
+      Quaternion qout22 = qbend22;
+      Quaternion qout23 = qbend23;
+      
+      Quaternion qout31 = qbend31;
+      Quaternion qout32 = qbend32;
+      Quaternion qout33 = qbend33;
+      
+      Quaternion qout41 = qbend41;
+      Quaternion qout42 = qbend42;
+      Quaternion qout43 = qbend43;
     }
+    /*
+    qout00.w = qout00w.filterIn(qout00.w);
+    qout00.x = qout00x.filterIn(qout00.x);
+    qout00.y = qout00y.filterIn(qout00.y);
+    qout00.z = qout00z.filterIn(qout00.z);
+
+    qout01.w = qout01w.filterIn(qout01.w);
+    qout01.x = qout01x.filterIn(qout01.x);
+    qout01.y = qout01y.filterIn(qout01.y);
+    qout01.z = qout01z.filterIn(qout01.z);
+
+    qout02.w = qout02w.filterIn(qout02.w);
+    qout02.x = qout02x.filterIn(qout02.x);
+    qout02.y = qout02y.filterIn(qout02.y);
+    qout02.z = qout02z.filterIn(qout02.z);
+
+    qout11.w = qout11w.filterIn(qout11.w);
+    qout11.x = qout11x.filterIn(qout11.x);
+    qout11.y = qout11y.filterIn(qout11.y);
+    qout11.z = qout11z.filterIn(qout11.z);
+
+    qout12.w = qout12w.filterIn(qout12.w);
+    qout12.x = qout12x.filterIn(qout12.x);
+    qout12.y = qout12y.filterIn(qout12.y);
+    qout12.z = qout12z.filterIn(qout12.z);
+
+    qout13.w = qout13w.filterIn(qout13.w);
+    qout13.x = qout13x.filterIn(qout13.x);
+    qout13.y = qout13y.filterIn(qout13.y);
+    qout13.z = qout13z.filterIn(qout13.z);
+
+    qout21.w = qout21w.filterIn(qout21.w);
+    qout21.x = qout21x.filterIn(qout21.x);
+    qout21.y = qout21y.filterIn(qout21.y);
+    qout21.z = qout21z.filterIn(qout21.z);
+
+    qout22.w = qout22w.filterIn(qout22.w);
+    qout22.x = qout22x.filterIn(qout22.x);
+    qout22.y = qout22y.filterIn(qout22.y);
+    qout22.z = qout22z.filterIn(qout22.z);
+
+    qout23.w = qout23w.filterIn(qout23.w);
+    qout23.x = qout23x.filterIn(qout23.x);
+    qout23.y = qout23y.filterIn(qout23.y);
+    qout23.z = qout23z.filterIn(qout23.z);
+
+    qout31.w = qout31w.filterIn(qout31.w);
+    qout31.x = qout31x.filterIn(qout31.x);
+    qout31.y = qout31y.filterIn(qout31.y);
+    qout31.z = qout31z.filterIn(qout31.z);
+
+    qout32.w = qout32w.filterIn(qout32.w);
+    qout32.x = qout32x.filterIn(qout32.x);
+    qout32.y = qout32y.filterIn(qout32.y);
+    qout32.z = qout32z.filterIn(qout32.z);
+
+    qout33.w = qout33w.filterIn(qout33.w);
+    qout33.x = qout33x.filterIn(qout33.x);
+    qout33.y = qout33y.filterIn(qout33.y);
+    qout33.z = qout33z.filterIn(qout33.z);
+
+    qout41.w = qout41w.filterIn(qout41.w);
+    qout41.x = qout41x.filterIn(qout41.x);
+    qout41.y = qout41y.filterIn(qout41.y);
+    qout41.z = qout41z.filterIn(qout41.z);
+
+    qout42.w = qout42w.filterIn(qout42.w);
+    qout42.x = qout42x.filterIn(qout42.x);
+    qout42.y = qout42y.filterIn(qout42.y);
+    qout42.z = qout42z.filterIn(qout42.z);
+
+    qout43.w = qout43w.filterIn(qout43.w);
+    qout43.x = qout43x.filterIn(qout43.x);
+    qout43.y = qout43y.filterIn(qout43.y);
+    qout43.z = qout43z.filterIn(qout43.z);
+    */
+    //Send the output (Optimzed to remove redundancy
+    SerialBT.print(String(qout00.w,res)+", "+String(qout00.x,res)+", "+String(qout00.y,res)+", "+String(qout00.z,res)+", ");
+    SerialBT.print(String(qout01.w,res)+", "+String(qout01.x,res)+", "+String(qout01.y,res)+", "+String(qout01.z,res)+", ");
+    SerialBT.print(String(qout02.w,res)+", "+String(qout02.x,res)+", "+String(qout02.y,res)+", "+String(qout02.z,res)+", ");
+    
+    SerialBT.print(String(qout11.w,res)+", "+String(qout11.x,res)+", "+String(qout11.y,res)+", "+String(qout11.z,res)+", ");
+    SerialBT.print(String(qout12.w,res)+", "+String(qout12.x,res)+", "+String(qout12.y,res)+", "+String(qout12.z,res)+", ");
+    SerialBT.print(String(qout13.w,res)+", "+String(qout13.x,res)+", "+String(qout13.y,res)+", "+String(qout13.z,res)+", ");
+
+    SerialBT.print(String(qout21.w,res)+", "+String(qout21.x,res)+", "+String(qout21.y,res)+", "+String(qout21.z,res)+", ");
+    SerialBT.print(String(qout22.w,res)+", "+String(qout22.x,res)+", "+String(qout22.y,res)+", "+String(qout22.z,res)+", ");
+    SerialBT.print(String(qout23.w,res)+", "+String(qout23.x,res)+", "+String(qout23.y,res)+", "+String(qout23.z,res)+", ");
+
+    SerialBT.print(String(qout31.w,res)+", "+String(qout31.x,res)+", "+String(qout31.y,res)+", "+String(qout31.z,res)+", ");
+    SerialBT.print(String(qout32.w,res)+", "+String(qout32.x,res)+", "+String(qout32.y,res)+", "+String(qout32.z,res)+", ");
+    SerialBT.print(String(qout33.w,res)+", "+String(qout33.x,res)+", "+String(qout33.y,res)+", "+String(qout33.z,res)+", ");
+    
+    SerialBT.print(String(qout41.w,res)+", "+String(qout41.x,res)+", "+String(qout41.y,res)+", "+String(qout41.z,res)+", ");
+    SerialBT.print(String(qout42.w,res)+", "+String(qout42.x,res)+", "+String(qout42.y,res)+", "+String(qout42.z,res)+", ");
+    SerialBT.println(String(qout43.w,res)+", "+String(qout43.x,res)+", "+String(qout43.y,res)+", "+String(qout43.z,res)+", ");
    }
 }
