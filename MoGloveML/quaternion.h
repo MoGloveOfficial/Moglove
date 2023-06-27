@@ -7,7 +7,7 @@ struct Quaternion {
   float w, x, y, z;
 };
 
-struct EulerAngles {
+struct Euler {
   float roll;
   float pitch;
   float yaw;
@@ -26,28 +26,42 @@ void normQuat(Quaternion& quat) {
   quat.z /= mag;
 }
 
+Euler quat2Euler(const Quaternion& quat){
+  Euler euler;
+  euler.roll = atan2(2*(quat.w*quat.x+quat.y*quat.z), 1-2*(quat.x*quat.x+quat.y*quat.y));
+  euler.pitch = asin(2*(quat.w*quat.y-quat.z*quat.x));
+  euler.yaw = atan2(2*(quat.w*quat.z+quat.x*quat.y),1-2*(quat.y*quat.y+quat.z*quat.z));
+  return euler;
+}
+
+Quaternion euler2Quat(const Euler& euler){
+  float cr = cos(euler.roll * 0.5);
+  float sr = sin(euler.roll * 0.5);
+  float cp = cos(euler.pitch * 0.5);
+  float sp = sin(euler.pitch * 0.5);
+  float cy = cos(euler.yaw * 0.5);
+  float sy = sin(euler.yaw * 0.5);
+  Quaternion quat;
+  quat.w = cr * cp * cy + sr * sp * sy;
+  quat.x = sr * cp * cy - cr * sp * sy;
+  quat.y = cr * sp * cy + sr * cp * sy;
+  quat.z = cr * cp * sy - sr * sp * cy;
+  normQuat(quat);
+  return quat;
+}
+
 Quaternion scaleQuat(const Quaternion& quat, float scalar) {
-  //Quaternion sucks at scaler rotation
-  //Slerp => shortest path => not what I want
   //Quaternion=>Euler=>Scale=>Quaternion
-  Quaternion result;
-
-  //Convert to Euler
-  float roll = atan2(2*(quat.w*quat.x+quat.y*quat.z), 1-2*(quat.x*quat.x+quat.y*quat.y));
-  float pitch = asin(2*(quat.w*quat.y-quat.z*quat.x));
-  float yaw = atan2(2*(quat.w*quat.z+quat.x*quat.y),1-2*(quat.y*quat.y+quat.z*quat.z));
-
+  //Convert to euler
+  Euler euler = quat2Euler(quat);
+  
   //Apply Scale
-  roll = roll/scalar;
-  pitch = pitch/scalar;
-  yaw = yaw/scalar;
+  euler.roll = euler.roll/scalar;
+  euler.pitch = euler.pitch/scalar;
+  euler.yaw = euler.yaw/scalar;
 
   //Convert back to Quaternion
-  result.w = cos(roll) * cos(roll) * cos(roll) + sin(roll) * sin(roll) * sin(roll);
-  result.x = sin(roll) * cos(roll) * cos(roll) - cos(roll) * sin(roll) * sin(roll);
-  result.y = cos(roll) * sin(roll) * cos(roll) + sin(roll) * cos(roll) * sin(roll);
-  result.z = cos(roll) * cos(roll) * sin(roll) - sin(roll) * sin(roll) * cos(roll);
-  normQuat(result);
+  Quaternion result = euler2Quat(euler);
   return result;
 }
 
