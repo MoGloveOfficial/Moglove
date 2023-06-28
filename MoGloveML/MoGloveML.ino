@@ -55,23 +55,22 @@ float dif4 = upper4 - lower4;
 float upperThres = 9000.0;
 float lowerThres = 6000.0;
 
-
 //Sample at 100Hz, LPF => 10Hz
 
 const unsigned long calTime = 3000; //Hold for 3 seconds
 unsigned long startTime = 0;
 
-const int res = 4;    //Resolution of quaternion output
+const int res = 6;    //Resolution of quaternion output
 int prevPred;
 
 unsigned long previousMillis = 0;   // Previous time value
 const unsigned long interval = 10;  // Sampling time interval in milliseconds
-const float cutoff_freq   = 10.0;  //Cutoff frequency in Hz
+const float cutoff_freq   = 5.0;  //Cutoff frequency in Hz
 const float sampling_time = 0.01; //Sampling time in seconds.
-IIR::ORDER  order  = IIR::ORDER::OD2; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
+IIR::ORDER  order  = IIR::ORDER::OD3; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
 
-const float cutoff_freq_out   = 10.0;
-IIR::ORDER  order_out  = IIR::ORDER::OD2; // filter order for output
+const float cutoff_freq_out   = 5.0;
+IIR::ORDER  order_out  = IIR::ORDER::OD3; // filter order for output
 
 // (INPUT) Low-pass filter for each fingers
 Filter f0(cutoff_freq, sampling_time, order);
@@ -293,8 +292,8 @@ void setup() {
 void loop(){
   unsigned long currentMillis = millis();  // Get the current time
   if (currentMillis - previousMillis >= interval) {
-    Serial.print("interval =");
-    Serial.println(currentMillis - previousMillis);
+    //Serial.print("interval =");
+    //Serial.println(currentMillis - previousMillis);
     previousMillis = currentMillis;  // Update the previous time
     int val0 = analogRead(fin0);
     int val1 = analogRead(fin1);
@@ -339,10 +338,12 @@ void loop(){
     }
     prevPred = pred
     */
+    /*
     Serial.print("Prediction: ");
     Serial.print(pred);
     Serial.print(", conf: ");
     Serial.println(cw);
+    */
     Quaternion qout00;
     Quaternion qout01;
     Quaternion qout02;
@@ -399,22 +400,8 @@ void loop(){
     Quaternion qbend43 = {1.0f,fval4,0.0f,0.0f};
     normQuat(qbend43);
     
-    /*
-    Quaternion qbend00 = {1.0f, 0.0f, 0.0f, 0.15*-fval0};
-    normQuat(qbend00);
-    Quaternion qbend01 = {1.0f, 0.0f, 0.0f, 1.15*-fval0};
-    normQuat(qbend01);
-    Quaternion qbend1 = {1.0f, 1.25f * fval1, 0.0f, 0.0f};
-    normQuat(qbend1);
-    Quaternion qbend2 = {1.0f, 1.25f * fval2, 0.0f, 0.0f};
-    normQuat(qbend2);
-    Quaternion qbend3 = {1.0f, 1.25f * fval3, 0.0f, 0.0f};
-    normQuat(qbend3);
-    Quaternion qbend4 = {1.0f, 1.25f * fval4, 0.0f, 0.0f};
-    normQuat(qbend4);
-    */
-    if(0){
-    //if((0<=pred)&&(pred<=18)){
+    //if(0){
+    if((0<=pred)&&(pred<=18)){
       //Qout = (A*Qbend) + (B*conf*qpat)
       //* => Scalar multiplication of quaternion
       //+ => Quaternion addition
@@ -423,7 +410,7 @@ void loop(){
       //fin01 = > [1,0,0,-1.15]
       //fin1 => [1,1.25,0,0]
       //Obtain Pattern Quaternion
-      /*
+
       Quaternion qpat00 = {qfins00[pred][0], qfins00[pred][1], qfins00[pred][2], qfins00[pred][3]};
       Quaternion qpat01 = {qfins01[pred][0], qfins01[pred][1], qfins01[pred][2], qfins01[pred][3]};
       Quaternion qpat1 = {qfins1[pred][0], qfins1[pred][1], qfins1[pred][2], qfins1[pred][3]};
@@ -443,44 +430,44 @@ void loop(){
       qpat4 = scaleQuat(qpat4, cw);
       //Scale the pattern Quaternion by bendiness weight
       qbend01 = scaleQuat(qbend01, bw);
-      qbend01 = scaleQuat(qbend01, bw);
-      qbend2 = scaleQuat(qbend2, bw);
-      qbend3 = scaleQuat(qbend3, bw);
-      qbend4 = scaleQuat(qbend4, bw);
+      qbend11 = scaleQuat(qbend11, bw);
+      qbend21 = scaleQuat(qbend21, bw);
+      qbend31 = scaleQuat(qbend31, bw);
+      qbend41 = scaleQuat(qbend41, bw);
 
       //Combine the effect of Pattern quat and Bend quat
       qout00 = add2Quats(qpat00, qbend00);
       qout01 = add2Quats(qpat01, qbend01);
-      qout1 = add2Quats(qpat1,qbend1);
-      qout2 = add2Quats(qpat2,qbend2);
-      qout3 = add2Quats(qpat3,qbend3);
-      qout4 = add2Quats(qpat4,qbend4);
-      */
+      qout11 = add2Quats(qpat1,qbend11);
+      qout21 = add2Quats(qpat2,qbend21);
+      qout31 = add2Quats(qpat3,qbend31);
+      qout41 = add2Quats(qpat4,qbend41);
+
     }
     //If no pattern match found
     else{
       bw = 1;
-      Quaternion qout00 = qbend00;
-      Quaternion qout01 = qbend01;
-      Quaternion qout02 = qbend02;
+      qout00 = qbend00;
+      qout01 = qbend01;
+      qout02 = qbend02;
       
-      Quaternion qout11 = qbend11;
-      Quaternion qout12 = qbend12;
-      Quaternion qout13 = qbend13;
+      qout11 = qbend11;
+      qout12 = qbend12;
+      qout13 = qbend13;
       
-      Quaternion qout21 = qbend21;
-      Quaternion qout22 = qbend22;
-      Quaternion qout23 = qbend23;
+      qout21 = qbend21;
+      qout22 = qbend22;
+      qout23 = qbend23;
       
-      Quaternion qout31 = qbend31;
-      Quaternion qout32 = qbend32;
-      Quaternion qout33 = qbend33;
+      qout31 = qbend31;
+      qout32 = qbend32;
+      qout33 = qbend33;
       
-      Quaternion qout41 = qbend41;
-      Quaternion qout42 = qbend42;
-      Quaternion qout43 = qbend43;
+      qout41 = qbend41;
+      qout42 = qbend42;
+      qout43 = qbend43;
     }
-    /*
+
     qout00.w = qout00w.filterIn(qout00.w);
     qout00.x = qout00x.filterIn(qout00.x);
     qout00.y = qout00y.filterIn(qout00.y);
@@ -555,26 +542,27 @@ void loop(){
     qout43.x = qout43x.filterIn(qout43.x);
     qout43.y = qout43y.filterIn(qout43.y);
     qout43.z = qout43z.filterIn(qout43.z);
-    */
+
+
     //Send the output (Optimzed to remove redundancy
-    SerialBT.print(String(qout00.w,res)+", "+String(qout00.x,res)+", "+String(qout00.y,res)+", "+String(qout00.z,res)+", ");
-    SerialBT.print(String(qout01.w,res)+", "+String(qout01.x,res)+", "+String(qout01.y,res)+", "+String(qout01.z,res)+", ");
-    SerialBT.print(String(qout02.w,res)+", "+String(qout02.x,res)+", "+String(qout02.y,res)+", "+String(qout02.z,res)+", ");
+    SerialBT.print(String(qout00.w,res)+","+String(qout00.x,res)+","+String(qout00.y,res)+","+String(qout00.z,res)+",");
+    SerialBT.print(String(qout01.w,res)+",0,0,"+String(qout01.z,res)+",");
+    SerialBT.print(String(qout02.w,res)+",0,0,"+String(qout02.z,res)+",");
     
-    SerialBT.print(String(qout11.w,res)+", "+String(qout11.x,res)+", "+String(qout11.y,res)+", "+String(qout11.z,res)+", ");
-    SerialBT.print(String(qout12.w,res)+", "+String(qout12.x,res)+", "+String(qout12.y,res)+", "+String(qout12.z,res)+", ");
-    SerialBT.print(String(qout13.w,res)+", "+String(qout13.x,res)+", "+String(qout13.y,res)+", "+String(qout13.z,res)+", ");
+    SerialBT.print(String(qout11.w,res)+","+String(qout11.x,res)+","+String(qout11.y,res)+","+String(qout11.z,res)+",");
+    SerialBT.print(String(qout12.w,res)+","+String(qout12.x,res)+",0,0,");
+    SerialBT.print(String(qout13.w,res)+","+String(qout13.x,res)+",0,0,");
 
-    SerialBT.print(String(qout21.w,res)+", "+String(qout21.x,res)+", "+String(qout21.y,res)+", "+String(qout21.z,res)+", ");
-    SerialBT.print(String(qout22.w,res)+", "+String(qout22.x,res)+", "+String(qout22.y,res)+", "+String(qout22.z,res)+", ");
-    SerialBT.print(String(qout23.w,res)+", "+String(qout23.x,res)+", "+String(qout23.y,res)+", "+String(qout23.z,res)+", ");
+    SerialBT.print(String(qout21.w,res)+","+String(qout21.x,res)+","+String(qout21.y,res)+","+String(qout21.z,res)+",");
+    SerialBT.print(String(qout22.w,res)+","+String(qout22.x,res)+",0,0,");
+    SerialBT.print(String(qout23.w,res)+","+String(qout23.x,res)+",0,0,");
 
-    SerialBT.print(String(qout31.w,res)+", "+String(qout31.x,res)+", "+String(qout31.y,res)+", "+String(qout31.z,res)+", ");
-    SerialBT.print(String(qout32.w,res)+", "+String(qout32.x,res)+", "+String(qout32.y,res)+", "+String(qout32.z,res)+", ");
-    SerialBT.print(String(qout33.w,res)+", "+String(qout33.x,res)+", "+String(qout33.y,res)+", "+String(qout33.z,res)+", ");
+    SerialBT.print(String(qout31.w,res)+","+String(qout31.x,res)+","+String(qout31.y,res)+","+String(qout31.z,res)+",");
+    SerialBT.print(String(qout32.w,res)+","+String(qout32.x,res)+",0,0,");
+    SerialBT.print(String(qout33.w,res)+","+String(qout33.x,res)+",0,0,");
     
-    SerialBT.print(String(qout41.w,res)+", "+String(qout41.x,res)+", "+String(qout41.y,res)+", "+String(qout41.z,res)+", ");
-    SerialBT.print(String(qout42.w,res)+", "+String(qout42.x,res)+", "+String(qout42.y,res)+", "+String(qout42.z,res)+", ");
-    SerialBT.println(String(qout43.w,res)+", "+String(qout43.x,res)+", "+String(qout43.y,res)+", "+String(qout43.z,res)+", ");
+    SerialBT.print(String(qout41.w,res)+","+String(qout41.x,res)+","+String(qout41.y,res)+","+String(qout41.z,res)+",");
+    SerialBT.print(String(qout42.w,res)+","+String(qout42.x,res)+",0,0,");
+    SerialBT.println(String(qout43.w,res)+","+String(qout43.x,res)+",0,0");
    }
 }
