@@ -25,7 +25,11 @@ import serial
 from bpy.props import PointerProperty
 
 #bone_list = ["親指０.R","人指１.R","中指１.R","薬指１.R","小指１.R"]
-bone_list = ["親指０.L","親指１.L","人指１.L","中指１.L","薬指１.L","小指１.L"]
+bone_list = ["親指０.L","親指１.L","親指２.L", 
+            "人指１.L","人指２.L","人指３.L",
+            "中指１.L","中指２.L","中指３.L",
+            "薬指１.L","薬指２.L","薬指３.L",
+            "小指１.L","小指２.L","小指３.L"]
 
 recordStatus = 0
 
@@ -100,7 +104,7 @@ class ModalTimerOperator(bpy.types.Operator):
             
             while True:
                 raw = arduino.readline().decode('utf-8').rstrip().split(',')
-                if len(raw) == 24:
+                if len(raw) == 60:  #data
                     data = list(map(float, raw))
                     print(data)
                     break
