@@ -34,6 +34,7 @@ Future support may include Virtual motion capture, which can be linked to VRChat
 # Education
 MoGlove also includes user customizable pose assets, as well as a sampling program(linux) to train custom tensorflow models.
 MoGlove project is aimed to be beginner friendly dive into the world of machine learning experience with absolutely minimum coding thanks to elegant library "EloquentML" for microcontrollers (Only 3 lines in total).
+User have the flexibillity to choose the poses, or even train the pose manually.
 
 
 
