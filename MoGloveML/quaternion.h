@@ -49,7 +49,7 @@ Quaternion euler2Quat(const Euler& euler){
   normQuat(quat);
   return quat;
 }
-
+/*
 Quaternion scaleQuat(const Quaternion& quat, float scalar) {
   //Quaternion=>Euler=>Scale=>Quaternion
   //Convert to euler
@@ -62,6 +62,16 @@ Quaternion scaleQuat(const Quaternion& quat, float scalar) {
 
   //Convert back to Quaternion
   Quaternion result = euler2Quat(euler);
+  return result;
+}
+*/
+Quaternion scaleQuat(const Quaternion& quat, float scalar){
+  Quaternion result;
+  result.w = quat.w;
+  result.x = quat.x*scalar;
+  result.y = quat.y*scalar;
+  result.z = quat.z*scalar;
+  normQuat(result);
   return result;
 }
 

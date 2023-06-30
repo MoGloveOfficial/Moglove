@@ -5,6 +5,28 @@
  * The MoGlove Project
  * Licensed under Creative Commons
  * 
+ * 
+ * To do 
+ *  - Hard soothing after transitioning to new pattern (LPF? Kolman? 
+ *  
+ *  -Hard coding the grip bones may be bad idea
+ *      -User configurable poses (quats may be better)
+ * -Write a Blender script to adjust hand poses for different models
+ *    - fbx file with finger pose data
+ *    - frames per pose -> quats
+ *    - outputs pattern.h that 
+ *    
+ * User adjustment patterns
+ *    1. Load fbx with finger patterns
+ *    2. Adjust the poses to fit the pattern
+ *    3. Run the script to obtain new patterns.h
+ *    4. Upload the code onto ESP32
+ *    5. EZ 
+ * 
+ * User adjustment bendiness
+ *    1. 
+ *    
+ * 
  */
 
 #include "modelNN.h"
@@ -60,17 +82,25 @@ float lowerThres = 6000.0;
 const unsigned long calTime = 3000; //Hold for 3 seconds
 unsigned long startTime = 0;
 
-const int res = 6;    //Resolution of quaternion output
+const unsigned long debounceTime = 100; //0.1s
+unsigned long debounceTimer = 0;
+
+int debounceState = 0;
 int prevPred;
+int newPred;
+int genuinePred;
+
+const int res = 6;    //Resolution of quaternion output
 
 unsigned long previousMillis = 0;   // Previous time value
 const unsigned long interval = 10;  // Sampling time interval in milliseconds
+
 const float cutoff_freq   = 5.0;  //Cutoff frequency in Hz
 const float sampling_time = 0.01; //Sampling time in seconds.
-IIR::ORDER  order  = IIR::ORDER::OD3; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
+IIR::ORDER  order  = IIR::ORDER::OD1; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
 
 const float cutoff_freq_out   = 5.0;
-IIR::ORDER  order_out  = IIR::ORDER::OD3; // filter order for output
+  IIR::ORDER  order_out  = IIR::ORDER::OD1; // filter order for output
 
 // (INPUT) Low-pass filter for each fingers
 Filter f0(cutoff_freq, sampling_time, order);
@@ -187,8 +217,8 @@ void calFlex(){
     for(int i =0; i < 5; i++){
       sum += fingers[i];
     }
-    Serial.print("sum: ");
-    Serial.println(sum);
+    //Serial.print("sum: ");
+    //Serial.println(sum);
     if(sum < lowerThres){
       fin0sum += fingers[0];
       fin1sum += fingers[1];
@@ -276,15 +306,13 @@ void calFlex(){
   }
 }
 
-
 void setup() {
   Serial.begin(115200);  // Initialize serial communication for debugging
   SerialBT.begin("MoGloveML");  
   while (!modelNN.begin()) {    //Init tf model
     Serial.print("Error in NN initialization: ");
     Serial.println(modelNN.getErrorMessage());
-    }
-    
+   } 
   calFlex();          //Calibrate fingers
   delay(1000);        // Wait for serial to stabilize
 }
@@ -300,7 +328,7 @@ void loop(){
     int val2 = analogRead(fin2);
     int val3 = analogRead(fin3);
     int val4 = analogRead(fin4);
-
+    
     //Filter input
     float fval0 = f0.filterIn(val0);
     float fval1 = f1.filterIn(val1);
@@ -308,7 +336,8 @@ void loop(){
     float fval3 = f3.filterIn(val3);
     float fval4 = f4.filterIn(val4);
 
-    //nm -> normalized in trained dataset
+    //no nm -> normalized  for bendiness
+    //nm -> normalized for trained dataset
 
     fval0 = map(fval0, min0,max0,0,1000)/1000.0;
     float fval0nm = (fval0-lower0)/dif0;
@@ -326,24 +355,44 @@ void loop(){
     int pred = round(out);
     float cw = 1-2*abs(out - pred);
     float bw = 1-cw;
-    /* Debounce pattern (to be implemented
-    if(prev_pat_timer - pat_timer > pat_duration){
-      
+    
+    //Software debounce when genuine prediction is made for substantial time => 0.1s
+    if(debounceState == 1){
+      if(newPred != pred){
+        //Treated as noise
+        debounceState = 0;
+      }
+      else if(currentMillis - debounceTimer > debounceTime){
+        //Genuine change detected
+        genuinePred = pred;
+        debounceState = 0;
+        //Want hard smoothing here... LPF for some limited duration
+        //Or perhaps...Another filter for pattern?
+      }
+      else{
+        //still under debounce test
+        prevPred = pred;
+      }
     }
-    if(pred!=prevPred){ //if pattern changes
-      //Smoothing
-      unsigned long pat_timer = millis();
-      cutoff_freq_out   = 1.0;
-      order_out  = IIR::ORDER::OD3; // filter order for output
+    
+    if(debounceState == 0){
+      if(prevPred != pred){   //Change detected
+        //Start the timer
+        debounceTimer = millis();
+        newPred = pred;
+        debounceState = 1;
+      }
+      prevPred = pred;
     }
-    prevPred = pred
-    */
     /*
-    Serial.print("Prediction: ");
+    Serial.print("Pred: ");
     Serial.print(pred);
-    Serial.print(", conf: ");
-    Serial.println(cw);
     */
+    Serial.print("GenuinePred: ");
+    Serial.println(genuinePred);
+    Serial.print("Conf: ");
+    Serial.println(cw);
+    
     Quaternion qout00;
     Quaternion qout01;
     Quaternion qout02;
@@ -365,6 +414,8 @@ void loop(){
     Quaternion qout43;
 
     //Hard coding the curl bone rig so u dont have to rig it urself ;D
+    //Probably good idea to have it user adjustable
+    
     Quaternion qbend00 = {1.0f, 0.0f, 0.0f, 0.15*-fval0};
     normQuat(qbend00);
     Quaternion qbend01 = {1.0f,0.0f, 0.0f, 0.75*-fval0};
@@ -411,12 +462,12 @@ void loop(){
       //fin1 => [1,1.25,0,0]
       //Obtain Pattern Quaternion
 
-      Quaternion qpat00 = {qfins00[pred][0], qfins00[pred][1], qfins00[pred][2], qfins00[pred][3]};
-      Quaternion qpat01 = {qfins01[pred][0], qfins01[pred][1], qfins01[pred][2], qfins01[pred][3]};
-      Quaternion qpat1 = {qfins1[pred][0], qfins1[pred][1], qfins1[pred][2], qfins1[pred][3]};
-      Quaternion qpat2 = {qfins2[pred][0], qfins2[pred][1], qfins2[pred][2], qfins2[pred][3]};
-      Quaternion qpat3 = {qfins3[pred][0], qfins3[pred][1], qfins3[pred][2], qfins3[pred][3]};
-      Quaternion qpat4 = {qfins4[pred][0], qfins4[pred][1], qfins4[pred][2], qfins4[pred][3]};
+      Quaternion qpat00 = {qfins00[genuinePred][0], qfins00[genuinePred][1], qfins00[genuinePred][2], qfins00[genuinePred][3]};
+      Quaternion qpat01 = {qfins01[genuinePred][0], qfins01[genuinePred][1], qfins01[genuinePred][2], qfins01[genuinePred][3]};
+      Quaternion qpat1 = {qfins1[genuinePred][0], qfins1[genuinePred][1], qfins1[genuinePred][2], qfins1[genuinePred][3]};
+      Quaternion qpat2 = {qfins2[genuinePred][0], qfins2[genuinePred][1], qfins2[genuinePred][2], qfins2[genuinePred][3]};
+      Quaternion qpat3 = {qfins3[genuinePred][0], qfins3[genuinePred][1], qfins3[genuinePred][2], qfins3[genuinePred][3]};
+      Quaternion qpat4 = {qfins4[genuinePred][0], qfins4[genuinePred][1], qfins4[genuinePred][2], qfins4[genuinePred][3]};
       
       //cw => confidence weight
       //bw => bendiness weight
@@ -428,6 +479,7 @@ void loop(){
       qpat2 = scaleQuat(qpat2, cw);
       qpat3 = scaleQuat(qpat3, cw);
       qpat4 = scaleQuat(qpat4, cw);
+      
       //Scale the pattern Quaternion by bendiness weight
       qbend01 = scaleQuat(qbend01, bw);
       qbend11 = scaleQuat(qbend11, bw);
@@ -442,11 +494,9 @@ void loop(){
       qout21 = add2Quats(qpat2,qbend21);
       qout31 = add2Quats(qpat3,qbend31);
       qout41 = add2Quats(qpat4,qbend41);
-
     }
     //If no pattern match found
     else{
-      bw = 1;
       qout00 = qbend00;
       qout01 = qbend01;
       qout02 = qbend02;
@@ -467,82 +517,99 @@ void loop(){
       qout42 = qbend42;
       qout43 = qbend43;
     }
-
+    
+    //Filtering the output. Bad solution use Unscented Kalman filter?
+    //It's kinda working tho
     qout00.w = qout00w.filterIn(qout00.w);
     qout00.x = qout00x.filterIn(qout00.x);
     qout00.y = qout00y.filterIn(qout00.y);
     qout00.z = qout00z.filterIn(qout00.z);
+    normQuat(qout00);
 
     qout01.w = qout01w.filterIn(qout01.w);
     qout01.x = qout01x.filterIn(qout01.x);
     qout01.y = qout01y.filterIn(qout01.y);
     qout01.z = qout01z.filterIn(qout01.z);
-
+    normQuat(qout01);
+    
     qout02.w = qout02w.filterIn(qout02.w);
     qout02.x = qout02x.filterIn(qout02.x);
     qout02.y = qout02y.filterIn(qout02.y);
     qout02.z = qout02z.filterIn(qout02.z);
-
+    normQuat(qout02);
+    
     qout11.w = qout11w.filterIn(qout11.w);
     qout11.x = qout11x.filterIn(qout11.x);
     qout11.y = qout11y.filterIn(qout11.y);
     qout11.z = qout11z.filterIn(qout11.z);
+    normQuat(qout11);
 
     qout12.w = qout12w.filterIn(qout12.w);
     qout12.x = qout12x.filterIn(qout12.x);
     qout12.y = qout12y.filterIn(qout12.y);
     qout12.z = qout12z.filterIn(qout12.z);
+    normQuat(qout12);
+    
 
     qout13.w = qout13w.filterIn(qout13.w);
     qout13.x = qout13x.filterIn(qout13.x);
     qout13.y = qout13y.filterIn(qout13.y);
     qout13.z = qout13z.filterIn(qout13.z);
+    normQuat(qout13);
 
     qout21.w = qout21w.filterIn(qout21.w);
     qout21.x = qout21x.filterIn(qout21.x);
     qout21.y = qout21y.filterIn(qout21.y);
     qout21.z = qout21z.filterIn(qout21.z);
+    normQuat(qout21);
 
     qout22.w = qout22w.filterIn(qout22.w);
     qout22.x = qout22x.filterIn(qout22.x);
     qout22.y = qout22y.filterIn(qout22.y);
     qout22.z = qout22z.filterIn(qout22.z);
+    normQuat(qout22);
 
     qout23.w = qout23w.filterIn(qout23.w);
     qout23.x = qout23x.filterIn(qout23.x);
     qout23.y = qout23y.filterIn(qout23.y);
     qout23.z = qout23z.filterIn(qout23.z);
-
+    normQuat(qout23);
+    
     qout31.w = qout31w.filterIn(qout31.w);
     qout31.x = qout31x.filterIn(qout31.x);
     qout31.y = qout31y.filterIn(qout31.y);
     qout31.z = qout31z.filterIn(qout31.z);
-
+    normQuat(qout31);
+    
     qout32.w = qout32w.filterIn(qout32.w);
     qout32.x = qout32x.filterIn(qout32.x);
     qout32.y = qout32y.filterIn(qout32.y);
     qout32.z = qout32z.filterIn(qout32.z);
+    normQuat(qout32);
 
     qout33.w = qout33w.filterIn(qout33.w);
     qout33.x = qout33x.filterIn(qout33.x);
     qout33.y = qout33y.filterIn(qout33.y);
     qout33.z = qout33z.filterIn(qout33.z);
+    normQuat(qout33);
 
     qout41.w = qout41w.filterIn(qout41.w);
     qout41.x = qout41x.filterIn(qout41.x);
     qout41.y = qout41y.filterIn(qout41.y);
     qout41.z = qout41z.filterIn(qout41.z);
-
+    normQuat(qout41);
+    
     qout42.w = qout42w.filterIn(qout42.w);
     qout42.x = qout42x.filterIn(qout42.x);
     qout42.y = qout42y.filterIn(qout42.y);
     qout42.z = qout42z.filterIn(qout42.z);
-
+    normQuat(qout42);
+    
     qout43.w = qout43w.filterIn(qout43.w);
     qout43.x = qout43x.filterIn(qout43.x);
     qout43.y = qout43y.filterIn(qout43.y);
     qout43.z = qout43z.filterIn(qout43.z);
-
+    normQuat(qout43);
 
     //Send the output (Optimzed to remove redundancy
     SerialBT.print(String(qout00.w,res)+","+String(qout00.x,res)+","+String(qout00.y,res)+","+String(qout00.z,res)+",");

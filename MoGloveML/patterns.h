@@ -2,6 +2,7 @@
 //Store the quats in 2D array
 //finger0-1{19}{4}= {w1,x1,y1,z1},{w2,x2,y2,z2}...{w19,x19,y19,z19}...
 //Usage => fin2{i} = {w,x,y,z};
+//Add all fingers in the future
 
 float qfins00[19][4] = {
   {0.999481857,0.006088424,0.006067465,0.031021059},
