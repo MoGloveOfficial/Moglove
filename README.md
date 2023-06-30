@@ -19,19 +19,21 @@ Quick Calibration (under 10 sec)
 - 
 
 # Usage
-
+- 3D Vtubing
+- VR
+- Indie 3D animation
+- And more...
 
 # Output
-Native Blender addon
-Currently supports vmd file format used for MMD animations.
-Finger grip bone must be added using GripX2 Plugin found in PMXEditor software/
+Native Blender addon (Live preview/Recording)
+VMD output for MMD use.
 
 Future support may include Virtual motion capture, which can be linked to VRChat, UE, Unity, etc...
 *BVH format does not support native finger tracking capabillity...
 
 # Education
 MoGlove also includes user customizable pose assets, as well as a sampling program(linux) to train custom tensorflow models.
-MoGlove project is a beginner friendy, to give first dive into machine learning experience with minimum coding skill thanks to elegant library "EloquentML" for microcontrollers (Only 3 lines in total).
+MoGlove project is aimed to be beginner friendly dive into the world of machine learning experience with absolutely minimum coding thanks to elegant library "EloquentML" for microcontrollers (Only 3 lines in total).
 
 
 
