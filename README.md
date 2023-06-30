@@ -9,8 +9,8 @@ Zero drift/occulusion
 Pure resistive base tracking
 Quick Calibration (under 10 sec)
 
-# Spec
 
+# Spec
 - 100Hz+ capture rate
 - Hot swappable sensors and gloves
 - 400mAh 6hr battery life 1 hr charge
@@ -28,6 +28,12 @@ Finger grip bone must be added using GripX2 Plugin found in PMXEditor software/
 
 Future support may include Virtual motion capture, which can be linked to VRChat, UE, Unity, etc...
 *BVH format does not support native finger tracking capabillity...
+
+# Education
+MoGlove also includes user customizable pose assets, as well as a sampling program(linux) to train custom tensorflow models.
+MoGlove project is a beginner friendy, to give first dive into machine learning experience with minimum coding skill thanks to elegant library "EloquentML" for microcontrollers (Only 3 lines in total).
+
+
 
 # Honourable Inspiration sources
 - Mocopi
