@@ -1,20 +1,24 @@
 # MoGlove
-Open Sourced Flex Based Mocap Glove
+Open Source Machine trained Flex Based Mocap Glove
 
-"MoGlove" is an open-source ESP32 based Wireless mocap solution developed for indie level finger tracking.
+"MoGlove" is an open-source ESP32 based Wireless mocap solution developed for indie level finger tracking on a limited budget.
 MoGlove is the first flex based finger tracking solution with Machined trained pattern recognition to predict common hand gestures and poses based on curliness of fingers. 
 MoGlove uses tensorflow lite for microcontrollers, which handles all the recognition on the embedded board.
 
+
 Zero drift/occulusion
+No base station
+Rechargeable
+Wireless
 Pure resistive base tracking
 Quick Calibration (under 10 sec)
 
 
 # Spec
 - 100Hz+ capture rate
-- Hot swappable sensors and gloves
+- Hot swappable/Adjustable sensors and gloves
 - 400mAh 6hr battery life 1 hr charge
-- Wireless
+- Bluetooth 4.2
 - Adjustable smoothing
 - 
 
