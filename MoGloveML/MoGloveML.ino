@@ -7,10 +7,11 @@
  * 
  * 
  * To do 
- *  - Hard soothing after transitioning to new pattern (LPF? Kolman? 
+ *  - Hard smoothing after transitioning to new pattern (LPF? Kolman? 
  *  
  *  -Hard coding the grip bones may be bad idea
  *      -User configurable poses (quats may be better)
+ *
  * -Write a Blender script to adjust hand poses for different models
  *    - fbx file with finger pose data
  *    - frames per pose -> quats
@@ -95,12 +96,12 @@ const int res = 6;    //Resolution of quaternion output
 unsigned long previousMillis = 0;   // Previous time value
 const unsigned long interval = 10;  // Sampling time interval in milliseconds
 
-const float cutoff_freq   = 5.0;  //Cutoff frequency in Hz
+const float cutoff_freq   = 2.5;  //Cutoff frequency in Hz
 const float sampling_time = 0.01; //Sampling time in seconds.
-IIR::ORDER  order  = IIR::ORDER::OD1; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
+IIR::ORDER  order  = IIR::ORDER::OD2; //  Filter order for input (Order (OD1 to OD4) Higher => Smoother but more latency and computation)
 
-const float cutoff_freq_out   = 5.0;
-  IIR::ORDER  order_out  = IIR::ORDER::OD1; // filter order for output
+const float cutoff_freq_out   = 2.5;
+  IIR::ORDER  order_out  = IIR::ORDER::OD2; // filter order for output
 
 // (INPUT) Low-pass filter for each fingers
 Filter f0(cutoff_freq, sampling_time, order);
@@ -366,7 +367,7 @@ void loop(){
         //Genuine change detected
         genuinePred = pred;
         debounceState = 0;
-        //Want hard smoothing here... LPF for some limited duration
+        //Want hard smoothing here... LPF the output for some limited duration
         //Or perhaps...Another filter for pattern?
       }
       else{
@@ -374,7 +375,7 @@ void loop(){
         prevPred = pred;
       }
     }
-    
+
     if(debounceState == 0){
       if(prevPred != pred){   //Change detected
         //Start the timer
@@ -495,6 +496,7 @@ void loop(){
       qout31 = add2Quats(qpat3,qbend31);
       qout41 = add2Quats(qpat4,qbend41);
     }
+    
     //If no pattern match found
     else{
       qout00 = qbend00;
@@ -517,7 +519,7 @@ void loop(){
       qout42 = qbend42;
       qout43 = qbend43;
     }
-    
+
     //Filtering the output. Bad solution use Unscented Kalman filter?
     //It's kinda working tho
     qout00.w = qout00w.filterIn(qout00.w);
@@ -611,7 +613,7 @@ void loop(){
     qout43.z = qout43z.filterIn(qout43.z);
     normQuat(qout43);
 
-    //Send the output (Optimzed to remove redundancy
+    //Send the output (Optimzed to remove redundancy)
     SerialBT.print(String(qout00.w,res)+","+String(qout00.x,res)+","+String(qout00.y,res)+","+String(qout00.z,res)+",");
     SerialBT.print(String(qout01.w,res)+",0,0,"+String(qout01.z,res)+",");
     SerialBT.print(String(qout02.w,res)+",0,0,"+String(qout02.z,res)+",");
