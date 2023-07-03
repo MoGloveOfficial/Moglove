@@ -47,4 +47,4 @@ User have the flexibillity to customize poses, or even train it if desired.
 - [Somatic](https://www.youtube.com/watch?v=iTj0lcVSIVU&t=613s&ab_channel=ZackFreedman)
 - https://www.youtube.com/watch?v=PCBvUHJH8Gw&t=2011s&ab_channel=AnimationPrepStudios
 
-Developed by an single Electrical engineering student/ Inventor
+Solo Dev'ed by an 3D engineering inventor
