@@ -9,13 +9,17 @@
  * To do 
  *  - Hard smoothing after transitioning to new pattern (LPF? Kolman? 
  *  
+ *  
+ *  
  *  -Hard coding the grip bones may be bad idea
  *      -User configurable poses (quats may be better)
- *
+ *  Done!
+ *  
  * -Write a Blender script to adjust hand poses for different models
  *    - fbx file with finger pose data
  *    - frames per pose -> quats
  *    - outputs pattern.h that 
+ * Done!
  *    
  * User adjustment patterns
  *    1. Load fbx with finger patterns
@@ -24,8 +28,7 @@
  *    4. Upload the code onto ESP32
  *    5. EZ 
  * 
- * User adjustment bendiness
- *    1. 
+ * 
  *    
  * 
  */
@@ -354,8 +357,13 @@ void loop(){
     float in[5] = {fval0nm, fval1nm, fval2nm, fval3nm, fval4nm};
     float out = modelNN.predict(in); 
     int pred = round(out);
-    float cw = 1-2*abs(out - pred);
-    float bw = 1-cw;
+    
+    float cw = 1.25 - 2*abs(out - pred);  //125% - offset
+    if(cw> 1.00){   //cut-off at 100% max
+      cw = 1.00f;
+    }
+    
+    float bw = 1.0 - cw;
     
     //Software debounce when genuine prediction is made for substantial time => 0.1s
     if(debounceState == 1){
@@ -416,44 +424,43 @@ void loop(){
 
     //Hard coding the curl bone rig so u dont have to rig it urself ;D
     //Probably good idea to have it user adjustable
-    
-    Quaternion qbend00 = {1.0f, 0.0f, 0.0f, 0.15*-fval0};
+    Quaternion qbend00 = {qfins00[20][0],qfins00[20][1],qfins00[20][2],qfins00[20][3]*fval0};
     normQuat(qbend00);
-    Quaternion qbend01 = {1.0f,0.0f, 0.0f, 0.75*-fval0};
+    Quaternion qbend01 = {qfins01[20][0],qfins01[20][1],qfins01[20][2],qfins01[20][3]*fval0};
     normQuat(qbend01);
-    Quaternion qbend02 = {1.0f,0.0f,0.0f, -fval0};
+    Quaternion qbend02 = {qfins02[20][0],qfins02[20][1],qfins02[20][2],qfins02[20][3]*fval0};
     normQuat(qbend02);
     
-    Quaternion qbend11 = {1.0f, 1.25*fval1, 0.0f, 0.0f};
+    Quaternion qbend11 = {qfins11[20][0],qfins11[20][1]*fval1 ,qfins11[20][2],qfins11[20][3]};
     normQuat(qbend11);
-    Quaternion qbend12 = {1.0f,1.25*fval1,0.0f,0.0f};
+    Quaternion qbend12 = {qfins12[20][0],qfins12[20][1]*fval1 ,qfins12[20][2],qfins12[20][3]};
     normQuat(qbend12);
-    Quaternion qbend13 = {1.0f,fval1,0.0f,0.0f};
+    Quaternion qbend13 = {qfins13[20][0],qfins13[20][1]*fval1 ,qfins13[20][2],qfins13[20][3]};
     normQuat(qbend13);
     
-    Quaternion qbend21 = {1.0f, 1.25*fval2, 0.0f, 0.0f};
+    Quaternion qbend21 = {qfins21[20][0],qfins21[20][1]*fval2 ,qfins21[20][2],qfins21[20][3]};
     normQuat(qbend21);
-    Quaternion qbend22 = {1.0f,1.25*fval2,0.0f,0.0f};
+    Quaternion qbend22 = {qfins22[20][0],qfins22[20][1]*fval2 ,qfins22[20][2],qfins22[20][3]};
     normQuat(qbend22);
-    Quaternion qbend23 = {1.0f,fval2,0.0f,0.0f};
+    Quaternion qbend23 = {qfins23[20][0],qfins23[20][1]*fval2 ,qfins23[20][2],qfins23[20][3]};
     normQuat(qbend23);
     
-    Quaternion qbend31 = {1.0f, 1.25*fval3, 0.0f, 0.0f};
+    Quaternion qbend31 = {qfins31[20][0],qfins31[20][1]*fval3 ,qfins31[20][2],qfins31[20][3]};
     normQuat(qbend31);
-    Quaternion qbend32 = {1.0f,1.25*fval3,0.0f,0.0f};
+    Quaternion qbend32 = {qfins32[20][0],qfins32[20][1]*fval3 ,qfins32[20][2],qfins32[20][3]};
     normQuat(qbend32);
-    Quaternion qbend33 = {1.0f,fval3,0.0f,0.0f};
+    Quaternion qbend33 = {qfins33[20][0],qfins33[20][1]*fval3 ,qfins33[20][2],qfins33[20][3]};
     normQuat(qbend33);
     
-    Quaternion qbend41 = {1.0f, 1.25*fval4, 0.0f, 0.0f};
+    Quaternion qbend41 = {qfins41[20][0],qfins41[20][1]*fval4 ,qfins41[20][2],qfins41[20][3]};
     normQuat(qbend41);
-    Quaternion qbend42 = {1.0f,1.25*fval4,0.0f,0.0f};
+    Quaternion qbend42 = {qfins42[20][0],qfins42[20][1]*fval4 ,qfins42[20][2],qfins42[20][3]};
     normQuat(qbend42);
-    Quaternion qbend43 = {1.0f,fval4,0.0f,0.0f};
+    Quaternion qbend43 = {qfins43[20][0],qfins43[20][1]*fval4 ,qfins43[20][2],qfins43[20][3]};
     normQuat(qbend43);
     
-    //if(0){
-    if((0<=pred)&&(pred<=18)){
+    if(0){
+    //if((0<=pred)&&(pred<=18)){
       //Qout = (A*Qbend) + (B*conf*qpat)
       //* => Scalar multiplication of quaternion
       //+ => Quaternion addition
@@ -465,10 +472,24 @@ void loop(){
 
       Quaternion qpat00 = {qfins00[genuinePred][0], qfins00[genuinePred][1], qfins00[genuinePred][2], qfins00[genuinePred][3]};
       Quaternion qpat01 = {qfins01[genuinePred][0], qfins01[genuinePred][1], qfins01[genuinePred][2], qfins01[genuinePred][3]};
-      Quaternion qpat1 = {qfins1[genuinePred][0], qfins1[genuinePred][1], qfins1[genuinePred][2], qfins1[genuinePred][3]};
-      Quaternion qpat2 = {qfins2[genuinePred][0], qfins2[genuinePred][1], qfins2[genuinePred][2], qfins2[genuinePred][3]};
-      Quaternion qpat3 = {qfins3[genuinePred][0], qfins3[genuinePred][1], qfins3[genuinePred][2], qfins3[genuinePred][3]};
-      Quaternion qpat4 = {qfins4[genuinePred][0], qfins4[genuinePred][1], qfins4[genuinePred][2], qfins4[genuinePred][3]};
+      Quaternion qpat02 = {qfins02[genuinePred][0], qfins02[genuinePred][1], qfins02[genuinePred][2], qfins02[genuinePred][3]};
+      
+      Quaternion qpat11 = {qfins11[genuinePred][0], qfins11[genuinePred][1], qfins11[genuinePred][2], qfins11[genuinePred][3]};
+      Quaternion qpat12 = {qfins12[genuinePred][0], qfins12[genuinePred][1], qfins12[genuinePred][2], qfins12[genuinePred][3]};
+      Quaternion qpat13 = {qfins13[genuinePred][0], qfins13[genuinePred][1], qfins13[genuinePred][2], qfins13[genuinePred][3]};
+
+      Quaternion qpat21 = {qfins21[genuinePred][0], qfins21[genuinePred][1], qfins21[genuinePred][2], qfins21[genuinePred][3]};
+      Quaternion qpat22 = {qfins22[genuinePred][0], qfins22[genuinePred][1], qfins22[genuinePred][2], qfins22[genuinePred][3]};
+      Quaternion qpat23 = {qfins23[genuinePred][0], qfins23[genuinePred][1], qfins23[genuinePred][2], qfins23[genuinePred][3]};
+
+      Quaternion qpat31 = {qfins31[genuinePred][0], qfins31[genuinePred][1], qfins31[genuinePred][2], qfins31[genuinePred][3]};
+      Quaternion qpat32 = {qfins32[genuinePred][0], qfins32[genuinePred][1], qfins32[genuinePred][2], qfins32[genuinePred][3]};
+      Quaternion qpat33 = {qfins33[genuinePred][0], qfins33[genuinePred][1], qfins33[genuinePred][2], qfins33[genuinePred][3]};
+
+      Quaternion qpat41 = {qfins41[genuinePred][0], qfins41[genuinePred][1], qfins41[genuinePred][2], qfins41[genuinePred][3]};
+      Quaternion qpat42 = {qfins42[genuinePred][0], qfins42[genuinePred][1], qfins42[genuinePred][2], qfins42[genuinePred][3]};
+      Quaternion qpat43 = {qfins43[genuinePred][0], qfins43[genuinePred][1], qfins43[genuinePred][2], qfins43[genuinePred][3]};
+
       
       //cw => confidence weight
       //bw => bendiness weight
@@ -476,25 +497,65 @@ void loop(){
       //Scale pattern Quaternion by confidence factor and confidence weight
       qpat00 = scaleQuat(qpat00, cw);
       qpat01 = scaleQuat(qpat01, cw);
-      qpat1 = scaleQuat(qpat1, cw);
-      qpat2 = scaleQuat(qpat2, cw);
-      qpat3 = scaleQuat(qpat3, cw);
-      qpat4 = scaleQuat(qpat4, cw);
+      qpat02 = scaleQuat(qpat02, cw);
+      
+      qpat11 = scaleQuat(qpat11, cw);
+      qpat12 = scaleQuat(qpat12, cw);
+      qpat13 = scaleQuat(qpat13, cw);
+
+      qpat21 = scaleQuat(qpat21, cw);
+      qpat22 = scaleQuat(qpat22, cw);
+      qpat23 = scaleQuat(qpat23, cw);
+
+      qpat31 = scaleQuat(qpat31, cw);
+      qpat32 = scaleQuat(qpat32, cw);
+      qpat33 = scaleQuat(qpat33, cw);
+
+      qpat41 = scaleQuat(qpat41, cw);
+      qpat42 = scaleQuat(qpat42, cw);
+      qpat43 = scaleQuat(qpat43, cw);
       
       //Scale the pattern Quaternion by bendiness weight
+      qbend00 = scaleQuat(qbend00, bw);
       qbend01 = scaleQuat(qbend01, bw);
+      qbend02 = scaleQuat(qbend02, bw);
+
       qbend11 = scaleQuat(qbend11, bw);
+      qbend12 = scaleQuat(qbend12, bw);
+      qbend13 = scaleQuat(qbend13, bw);
+
       qbend21 = scaleQuat(qbend21, bw);
+      qbend22 = scaleQuat(qbend22, bw);
+      qbend23 = scaleQuat(qbend23, bw);
+
       qbend31 = scaleQuat(qbend31, bw);
+      qbend32 = scaleQuat(qbend32, bw);
+      qbend33 = scaleQuat(qbend33, bw);
+
       qbend41 = scaleQuat(qbend41, bw);
+      qbend42 = scaleQuat(qbend42, bw);
+      qbend43 = scaleQuat(qbend43, bw);
 
       //Combine the effect of Pattern quat and Bend quat
       qout00 = add2Quats(qpat00, qbend00);
       qout01 = add2Quats(qpat01, qbend01);
-      qout11 = add2Quats(qpat1,qbend11);
-      qout21 = add2Quats(qpat2,qbend21);
-      qout31 = add2Quats(qpat3,qbend31);
-      qout41 = add2Quats(qpat4,qbend41);
+      qout02 = add2Quats(qpat02, qbend02);
+
+      qout11 = add2Quats(qpat11, qbend11);
+      qout12 = add2Quats(qpat12, qbend12);
+      qout13 = add2Quats(qpat13, qbend13);
+
+      qout21 = add2Quats(qpat21, qbend21);
+      qout22 = add2Quats(qpat22, qbend22);
+      qout23 = add2Quats(qpat23, qbend23);
+
+      qout31 = add2Quats(qpat31, qbend31);
+      qout32 = add2Quats(qpat32, qbend32);
+      qout33 = add2Quats(qpat33, qbend33);
+
+      qout41 = add2Quats(qpat41, qbend41);
+      qout42 = add2Quats(qpat42, qbend42);
+      qout43 = add2Quats(qpat43, qbend43);
     }
     
     //If no pattern match found
