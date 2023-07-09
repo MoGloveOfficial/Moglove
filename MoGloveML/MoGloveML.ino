@@ -28,6 +28,7 @@
  *    4. Upload the code onto ESP32
  *    5. EZ 
  * 
+ * Implement One Euro filter
  * 
  *    
  * 
@@ -431,36 +432,36 @@ void loop(){
     Quaternion qbend02 = {qfins02[20][0],qfins02[20][1],qfins02[20][2],qfins02[20][3]*fval0};
     normQuat(qbend02);
     
-    Quaternion qbend11 = {qfins11[20][0],qfins11[20][1]*fval1 ,qfins11[20][2],qfins11[20][3]};
+    Quaternion qbend11 = {qfins11[20][0],qfins11[20][1]*fval1 ,qfins11[20][2]*fval1,qfins11[20][3]*fval1};
     normQuat(qbend11);
     Quaternion qbend12 = {qfins12[20][0],qfins12[20][1]*fval1 ,qfins12[20][2],qfins12[20][3]};
     normQuat(qbend12);
     Quaternion qbend13 = {qfins13[20][0],qfins13[20][1]*fval1 ,qfins13[20][2],qfins13[20][3]};
     normQuat(qbend13);
     
-    Quaternion qbend21 = {qfins21[20][0],qfins21[20][1]*fval2 ,qfins21[20][2],qfins21[20][3]};
+    Quaternion qbend21 = {qfins21[20][0],qfins21[20][1]*fval2 ,qfins21[20][2]*fval2,qfins21[20][3]*fval2};
     normQuat(qbend21);
     Quaternion qbend22 = {qfins22[20][0],qfins22[20][1]*fval2 ,qfins22[20][2],qfins22[20][3]};
     normQuat(qbend22);
     Quaternion qbend23 = {qfins23[20][0],qfins23[20][1]*fval2 ,qfins23[20][2],qfins23[20][3]};
     normQuat(qbend23);
     
-    Quaternion qbend31 = {qfins31[20][0],qfins31[20][1]*fval3 ,qfins31[20][2],qfins31[20][3]};
+    Quaternion qbend31 = {qfins31[20][0],qfins31[20][1]*fval3 ,qfins31[20][2]*fval3,qfins31[20][3]*fval3};
     normQuat(qbend31);
     Quaternion qbend32 = {qfins32[20][0],qfins32[20][1]*fval3 ,qfins32[20][2],qfins32[20][3]};
     normQuat(qbend32);
     Quaternion qbend33 = {qfins33[20][0],qfins33[20][1]*fval3 ,qfins33[20][2],qfins33[20][3]};
     normQuat(qbend33);
     
-    Quaternion qbend41 = {qfins41[20][0],qfins41[20][1]*fval4 ,qfins41[20][2],qfins41[20][3]};
+    Quaternion qbend41 = {qfins41[20][0],qfins41[20][1]*fval4 ,qfins41[20][2]*fval4,qfins41[20][3]*fval4};
     normQuat(qbend41);
     Quaternion qbend42 = {qfins42[20][0],qfins42[20][1]*fval4 ,qfins42[20][2],qfins42[20][3]};
     normQuat(qbend42);
     Quaternion qbend43 = {qfins43[20][0],qfins43[20][1]*fval4 ,qfins43[20][2],qfins43[20][3]};
     normQuat(qbend43);
     
-    if(0){
-    //if((0<=pred)&&(pred<=18)){
+    //if(0){
+    if((0<=pred)&&(pred<=18)){
       //Qout = (A*Qbend) + (B*conf*qpat)
       //* => Scalar multiplication of quaternion
       //+ => Quaternion addition

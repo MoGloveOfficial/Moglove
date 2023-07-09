@@ -26,6 +26,19 @@ void normQuat(Quaternion& quat) {
   quat.z /= mag;
 }
 
+Quaternion conjQuat(Quaternion& quat){
+  return Quaternion(quat.w(), -quat.x(), -quat.y(), -quat.z());
+}
+
+
+
+float AngDist(Quaternion& q1, Quaternion& q2){
+  //Angular difference of two quats
+  Quaternion delta = q1 * q2.conjquat();
+  return 2.0 * acos(delta.w());
+}
+
+
 Euler quat2Euler(const Quaternion& quat){
   Euler euler;
   euler.roll = atan2(2*(quat.w*quat.x+quat.y*quat.z), 1-2*(quat.x*quat.x+quat.y*quat.y));
@@ -64,7 +77,7 @@ Quaternion scaleQuat(const Quaternion& quat, float scalar) {
   Quaternion result = euler2Quat(euler);
   return result;
 }
-*/
+
 Quaternion scaleQuat(const Quaternion& quat, float scalar){
   Quaternion result;
   result.w = quat.w;
@@ -74,7 +87,7 @@ Quaternion scaleQuat(const Quaternion& quat, float scalar){
   normQuat(result);
   return result;
 }
-
+*/
 
 Quaternion add2Quats(const Quaternion& quat1, const Quaternion& quat2){
   Quaternion result;
