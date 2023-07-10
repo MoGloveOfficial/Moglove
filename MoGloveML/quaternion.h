@@ -13,6 +13,16 @@ struct Euler {
   float yaw;
 };
 
+Quaternion multQuat(Quaternion q1, Quaternion q2) {
+  Quaternion result;
+  result.w = q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z;
+  result.x = q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y;
+  result.y = q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x;
+  result.z = q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w;
+  return result;
+}
+
+
 float magQuat(const Quaternion& quat) {
   return sqrt(quat.w * quat.w + quat.x * quat.x + quat.y * quat.y + quat.z * quat.z);
 }
@@ -27,15 +37,19 @@ void normQuat(Quaternion& quat) {
 }
 
 Quaternion conjQuat(Quaternion& quat){
-  return Quaternion(quat.w(), -quat.x(), -quat.y(), -quat.z());
+  Quaternion result;
+  result.w = quat.w;
+  result.x = -quat.x;
+  result.y = -quat.y;
+  result.z = -quat.z;
 }
 
 
 
-float AngDist(Quaternion& q1, Quaternion& q2){
+float AngDist(Quaternion& quat1, Quaternion& quat2){
   //Angular difference of two quats
-  Quaternion delta = q1 * q2.conjquat();
-  return 2.0 * acos(delta.w());
+  Quaternion delta = multQuat(quat1, conjQuat(quat2));
+  return 2.0 * acos(delta.w);
 }
 
 
@@ -62,7 +76,7 @@ Quaternion euler2Quat(const Euler& euler){
   normQuat(quat);
   return quat;
 }
-/*
+
 Quaternion scaleQuat(const Quaternion& quat, float scalar) {
   //Quaternion=>Euler=>Scale=>Quaternion
   //Convert to euler
@@ -78,6 +92,7 @@ Quaternion scaleQuat(const Quaternion& quat, float scalar) {
   return result;
 }
 
+/*
 Quaternion scaleQuat(const Quaternion& quat, float scalar){
   Quaternion result;
   result.w = quat.w;
@@ -89,7 +104,7 @@ Quaternion scaleQuat(const Quaternion& quat, float scalar){
 }
 */
 
-Quaternion add2Quats(const Quaternion& quat1, const Quaternion& quat2){
+Quaternion addQuat(const Quaternion& quat1, const Quaternion& quat2){
   Quaternion result;
   result.w = quat1.w + quat2.w;
   result.x = quat1.x + quat2.x;

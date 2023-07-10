@@ -538,25 +538,25 @@ void loop(){
       qbend43 = scaleQuat(qbend43, bw);
 
       //Combine the effect of Pattern quat and Bend quat
-      qout00 = add2Quats(qpat00, qbend00);
-      qout01 = add2Quats(qpat01, qbend01);
-      qout02 = add2Quats(qpat02, qbend02);
+      qout00 = addQuat(qpat00, qbend00);
+      qout01 = addQuat(qpat01, qbend01);
+      qout02 = addQuat(qpat02, qbend02);
 
-      qout11 = add2Quats(qpat11, qbend11);
-      qout12 = add2Quats(qpat12, qbend12);
-      qout13 = add2Quats(qpat13, qbend13);
+      qout11 = addQuat(qpat11, qbend11);
+      qout12 = addQuat(qpat12, qbend12);
+      qout13 = addQuat(qpat13, qbend13);
 
-      qout21 = add2Quats(qpat21, qbend21);
-      qout22 = add2Quats(qpat22, qbend22);
-      qout23 = add2Quats(qpat23, qbend23);
+      qout21 = addQuat(qpat21, qbend21);
+      qout22 = addQuat(qpat22, qbend22);
+      qout23 = addQuat(qpat23, qbend23);
 
-      qout31 = add2Quats(qpat31, qbend31);
-      qout32 = add2Quats(qpat32, qbend32);
-      qout33 = add2Quats(qpat33, qbend33);
+      qout31 = addQuat(qpat31, qbend31);
+      qout32 = addQuat(qpat32, qbend32);
+      qout33 = addQuat(qpat33, qbend33);
 
-      qout41 = add2Quats(qpat41, qbend41);
-      qout42 = add2Quats(qpat42, qbend42);
-      qout43 = add2Quats(qpat43, qbend43);
+      qout41 = addQuat(qpat41, qbend41);
+      qout42 = addQuat(qpat42, qbend42);
+      qout43 = addQuat(qpat43, qbend43);
     }
     
     //If no pattern match found
