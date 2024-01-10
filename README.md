@@ -35,16 +35,10 @@ Future support may include Virtual motion capture, which can be linked to VRChat
 Credit to VRmixer
 *BVH format does not support native finger tracking capabillity...
 
-# Education
-MoGlove also includes user customizable pose assets, as well as a sampling program(linux) to train custom tensorflow models.
-MoGlove project is aimed to be beginner friendly dive into the world of machine learning experience with absolutely minimum coding thanks to elegant library "EloquentML" for microcontrollers (Only 3 lines in total).
-User have the flexibillity to customize poses, or even train it if desired.
 
-
-# Honourable Inspiration sources
+# Inspiration sources
 - Mocopi
 - Rokoko Glove
 - [Somatic](https://www.youtube.com/watch?v=iTj0lcVSIVU&t=613s&ab_channel=ZackFreedman)
 - https://www.youtube.com/watch?v=PCBvUHJH8Gw&t=2011s&ab_channel=AnimationPrepStudios
 
-Solo Dev'ed by an 3D engineering inventor
